@@ -1,3 +1,7 @@
+import util.InvalidSymbolException;
+import util.LexicalException;
+import util.UnfinishedCommentException;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -25,7 +29,7 @@ public class Parser {
             lexical.buildTokenTable(lines);
         } catch(IOException ex) {
             System.out.println("Erro durante a leitura do arquivo:\n" + ex.getMessage());
-        } catch (UnfinishedCommentException | InvalidSymbolException ex) {
+        } catch (LexicalException ex) {
             System.out.println(ex.getMessage());
         }
         lexical.showTable();

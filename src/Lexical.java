@@ -1,23 +1,25 @@
+import util.InvalidSymbolException;
+import util.LexicalException;
+import util.UnfinishedCommentException;
+
 import java.util.*;
 
 public class Lexical {
+    /** Conjunto de estados da máquina de estados do análisador léxico */
     enum Status {
         Q0(null),
         Q1(Type.IDENTIFICADOR),
-        Q20(Type.INTEIRO),
-        Q21(Type.REAL),
-        Q30(Type.DELIMITADOR),
-        Q40(Type.DELIMITADOR),
-        Q41(Type.ATRIBUICAO),
-        Q50(Type.OP_RELACIONAL),
-        Q60(Type.OP_RELACIONAL),
-        Q61(Type.OP_RELACIONAL),
-        Q62(Type.OP_RELACIONAL),
-        Q70(Type.OP_RELACIONAL),
-        Q71(Type.OP_RELACIONAL),
-        Q80(Type.OP_ADITIVO),
-        Q90(Type.OP_MULTIPLICATIVO),
-        Q99(null);
+        Q2(Type.INTEIRO),
+        Q3(Type.REAL),
+        Q4(Type.DELIMITADOR),
+        Q5(Type.DELIMITADOR),
+        Q6(Type.ATRIBUICAO),
+        Q7(Type.OP_RELACIONAL),
+        Q8(Type.OP_RELACIONAL),
+        Q9(Type.OP_RELACIONAL),
+        Q10(Type.OP_ADITIVO),
+        Q11(Type.OP_MULTIPLICATIVO),
+        Q12(null);
 
         public final Type statusType;
 
@@ -27,8 +29,8 @@ public class Lexical {
     }
 
     private List<Token> table;
-    private Map<String, Type> keywords;
-    private Set<Character> delimiters;
+    private final Map<String, Type> keywords;
+    private final Set<Character> delimiters;
     private Status status;
 
     public Lexical() {
@@ -38,6 +40,7 @@ public class Lexical {
         status = Status.Q0;
     }
 
+    /** Cria a lista de palavras reservadas (chave), onde o valor é o tipo associado a tal palavra */
     private Map<String, Type> createKeywordsMap() {
         Map<String, Type> keywords = new HashMap<>();
 
@@ -55,32 +58,41 @@ public class Lexical {
         keywords.put("while", Type.RESERVADO);
         keywords.put("do", Type.RESERVADO);
         keywords.put("not", Type.RESERVADO);
+        keywords.put("for", Type.RESERVADO);
+        keywords.put("to", Type.RESERVADO);
         keywords.put("and", Type.OP_MULTIPLICATIVO);
         keywords.put("or", Type.OP_ADITIVO);
 
         return keywords;
     }
 
+    /** Método para obter o próximo estado da máquina
+     *
+     * @param current O estado atual da máquina
+     * @param c O caracter a ser lido pela máquina
+     * @return O próximo estado
+     * @throws InvalidSymbolException Em caso da máquina ler um símbolo não pertencente ao alfabeto
+     */
     private Status getNextStatus(Status current, Character c) throws InvalidSymbolException {
         switch(current) {
             case Q0: // Estado inicial
                 switch (c) {
                     case ':': // c pode ser um delimitador ou atribuição
-                        return Status.Q40;
+                        return Status.Q5;
                     case '=': // operador relacional
-                        return Status.Q50;
+                        return Status.Q7;
                     case '<': // mesma coisa para < e > porém necessita-se ser checado se é acompanhado por um = ou um > no caso de <
-                        return Status.Q60;
+                        return Status.Q8;
                     case '>':
-                        return Status.Q70;
+                        return Status.Q9;
                     case '+': // Operadores aditivos
                     case '-':
-                        return Status.Q80;
+                        return Status.Q10;
                     case '*': // Operadores multiplicativos
                     case '/':
-                        return Status.Q90;
+                        return Status.Q11;
                     case '{': // Início de um comentário
-                        return Status.Q99;
+                        return Status.Q12;
                     case ' ': // Caracteres para serem ignorados
                     case '\t':
                     case '\r':
@@ -88,11 +100,11 @@ public class Lexical {
                         return Status.Q0;
                     default: // Outros caracteres
                         if(delimiters.contains(c)) { // c é um delimitador
-                            return Status.Q30;
+                            return Status.Q4;
                         } else if(Validator.isLetter(c)) { // c é uma letra
                             return Status.Q1;
                         } else if(Validator.isNumber(c)) { // c é um número
-                            return Status.Q20;
+                            return Status.Q2;
                         }
                         throw new InvalidSymbolException(c); // Se chegar aqui, é pelo fato de c ser um símbolo não reconhecido
                 }
@@ -101,48 +113,54 @@ public class Lexical {
                     return Status.Q1;
                 }
                 return Status.Q0;
-            case Q20:
+            case Q2:
                 if(Validator.isNumber(c)) {
-                    return Status.Q20; // Continua a ler o número
+                    return Status.Q2; // Continua a ler o número
                 } else if (c == '.') {
-                    return Status.Q21; // O token passa a ser um número real
+                    return Status.Q3; // O token passa a ser um número real
                 }
                 return Status.Q0;
-            case Q21:
+            case Q3:
                 if(Validator.isNumber(c)) { // Continua a ler o número real
-                    return Status.Q21;
+                    return Status.Q3;
                 }
                 return Status.Q0;
-            case Q30:
-            case Q50:
-            case Q80:
-            case Q90:
+            case Q4:
+            case Q6:
+            case Q7:
+            case Q10:
+            case Q11:
                 return Status.Q0; // Não deveria entrar aqui
-            case Q40:
+            case Q5:
                 if(c == '=') { // O token passa a ser uma atribuição
-                    return Status.Q41;
+                    return Status.Q6;
                 }
                 return Status.Q0;
-            case Q60:
+            case Q8:
                 if(c == '>' || c == '=') {
-                    return Status.Q60;
+                    return Status.Q8;
                 }
                 return Status.Q0;
-            case Q70:
+            case Q9:
                 if(c == '=') {
-                    return Status.Q70;
+                    return Status.Q9;
                 }
                 return Status.Q0;
-            case Q99:
+            case Q12:
                 if(c == '}') { // Fim do comentário
                     return Status.Q0;
                 }
-                return Status.Q99; // o comentário continua
+                return Status.Q12; // o comentário continua
         }
         throw new InvalidSymbolException(c);
     }
 
-    public void buildTokenTable(List<String> input) throws InvalidSymbolException, UnfinishedCommentException {
+    /** Método para criar a tabela de símbolos (tokens)
+     *
+     * @param input O texto a ser processado
+     * @throws LexicalException Em caso da análise léxica dar um erro (e.g. símbolo não pertencente ao alfabeto ou comentário não finalizado)
+     */
+    public void buildTokenTable(List<String> input) throws LexicalException {
         table.clear();
         int currentLine = 0;
         Status previous;
@@ -153,36 +171,48 @@ public class Lexical {
             for(Character character : line.toCharArray()) { // Para cada caractere da linha
                 // Obter o próximo e o estado atual
                 previous = status;
-                status = getNextStatus(previous, character);
+                try {
+                    status = getNextStatus(previous, character);
 
-                if(status == Status.Q0) { // O token foi lido
-                    switch(previous) {
-                        case Q0:
-                        case Q99:
-                            token = "";
-                            break;
-                        case Q1:
-                            if(keywords.containsKey(token)) {
-                                table.add(new Token(token, keywords.get(token), currentLine));
-                            } else {
+                    if (status == Status.Q0) { // O token foi lido
+                        switch (previous) {
+                            case Q0: // No caso anterior ser 0 ou 12 (comentário), apenas se limpa o token.
+                            case Q12:
+                                token = "";
+                                break;
+                            case Q1: // No caso de 1, significa que foi lido um idenficador
+                                // Contudo, tal idenficador pode ser uma palavra reservada ou um operador (and, or), verifica-se se o token lido está na tabela de palavras chave
+                                if (keywords.containsKey(token)) { // Em caso positivo, pegamos o tipo associado a tal palavra chave
+                                    table.add(new Token(token, keywords.get(token), currentLine));
+                                } else { // Caso contrário é um token
+                                    table.add(new Token(token, previous.statusType, currentLine));
+                                }
+                                token = "";
+                                // Necessitamos pegar o verdadeiro estado do caractere lido, pois seja : precedido por um identificador,
+                                // o estado da máquina após ler o : irá a 0 indicando que foi terminada a leitura do identificador, porém, a leitura de um : resulta no estado 5
+                                status = getNextStatus(status, character);
+                                if (status != Status.Q0 && status != Status.Q12) { // No caso do estado resultante não ser 0 ou 12 (comentário), adiciona o caractere lido ao token
+                                    token += character;
+                                }
+                                break;
+                            default: // Em outros casos, não é necessário verificar se o token é uma palavra reservada ou um operador
                                 table.add(new Token(token, previous.statusType, currentLine));
-                            }
-                            token = "";
-                            status = getNextStatus(status, character);
-                            if(status != Status.Q0 && status != Status.Q99) {
-                                token += character;
-                            }
-                            break;
-                        default:
-                            table.add(new Token(token, previous.statusType, currentLine));
-                            token = "";
+                                token = "";
+                                status = getNextStatus(status, character);
+                                if (status != Status.Q0 && status != Status.Q12) { // No caso do estado resultante não ser 0 ou 12 (comentário), adiciona o caractere lido ao token
+                                    token += character;
+                                }
+                                break;
+                        }
+                    } else if (status != Status.Q12) { // Token ainda está sendo lido passar para o próximo caractere
+                        token += character;
                     }
-                } else if(status != Status.Q99){ // Token ainda está sendo lido passar para o próximo caractere
-                    token += character;
+                } catch (InvalidSymbolException ex) {
+                    throw new LexicalException("(Linha " + currentLine + ") " + ex.getMessage());
                 }
             }
             // Fim da linha
-            if(status != Status.Q0 && status != Status.Q99) { // Caso a linha tenha terminado em um estado válido para um símbolo
+            if(status != Status.Q0 && status != Status.Q12) { // Caso a linha tenha terminado em um estado válido para um símbolo
                 if(status == Status.Q1 && keywords.containsKey(token)) {
                     table.add(new Token(token, keywords.get(token), currentLine));
                 } else {
@@ -192,11 +222,14 @@ public class Lexical {
             token = ""; // Limpar o token lido
             status = Status.Q0; // Resetar o estado
         }
-        if(status == Status.Q99) { // Chegou ao fim da leitura e o comentário não acabou
-            throw new UnfinishedCommentException();
+        if(status == Status.Q12) { // Chegou ao fim da leitura e o comentário não acabou
+            throw new LexicalException("(Linha " + currentLine + ") " + new UnfinishedCommentException().getMessage());
         }
     }
 
+    /** Método para mostrar a tabela de símbolos no terminal
+     * @TODO: Saída formatada em .csv ou .json (a decidir)
+     */
     public void showTable() {
         System.out.println("Token \t Classificação \t Linha");
         for(Token entry : table) {
