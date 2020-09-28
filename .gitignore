@@ -33,4 +33,10 @@ Lexico/DerivedData
 Lexico/Lexico.xcodeproj
 Lexico/Lexico.xcodeproj/
 
+# Eclipse stuff
+/bin/
+.classpath
+.project
+
 # End of https://www.gitignore.io/api/macos
+

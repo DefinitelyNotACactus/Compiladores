@@ -32,12 +32,18 @@ public class Lexical {
     private final Map<String, Type> keywords;
     private final Set<Character> delimiters;
     private Status status;
+    
+    private int currentLine;
+    private int errorLine;
 
     public Lexical() {
         table = new ArrayList<>();
         keywords = createKeywordsMap();
         delimiters = new HashSet<>(Arrays.asList(';', '.', '(', ')', ','));
         status = Status.Q0;
+        
+        this.currentLine = 0;
+        this.errorLine = 0;
     }
 
     /** Cria a lista de palavras reservadas (chave), onde o valor é o tipo associado a tal palavra */
@@ -92,6 +98,7 @@ public class Lexical {
                     case '/':
                         return Status.Q11;
                     case '{': // Início de um comentário
+                    	errorLine = currentLine;
                         return Status.Q12;
                     case ' ': // Caracteres para serem ignorados
                     case '\t':
@@ -162,7 +169,6 @@ public class Lexical {
      */
     public void buildTokenTable(List<String> input) throws LexicalException {
         table.clear();
-        int currentLine = 0;
         Status previous;
         String token = "";
         // Laço de leitura
@@ -208,7 +214,9 @@ public class Lexical {
                         token += character;
                     }
                 } catch (InvalidSymbolException ex) {
-                    throw new LexicalException("(Linha " + currentLine + ") " + ex.getMessage());
+                	errorLine = currentLine;
+                	currentLine = 0;
+                    throw new LexicalException("(Linha " + errorLine + ") " + ex.getMessage());
                 }
             }
             // Fim da linha
@@ -220,10 +228,15 @@ public class Lexical {
                 }
             }
             token = ""; // Limpar o token lido
-            status = Status.Q0; // Resetar o estado
+            
+            if(status != Status.Q12) { // Checa se não se está dentro de um comentário ao final da linha
+            	status = Status.Q0; // Resetar o estado            	
+            }
         }
+        
+        currentLine = 0;
         if(status == Status.Q12) { // Chegou ao fim da leitura e o comentário não acabou
-            throw new LexicalException("(Linha " + currentLine + ") " + new UnfinishedCommentException().getMessage());
+            throw new LexicalException("(Linha " + errorLine + ") " + new UnfinishedCommentException().getMessage());
         }
     }
 
