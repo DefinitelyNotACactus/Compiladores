@@ -2,10 +2,7 @@ import util.InvalidSymbolException;
 import util.LexicalException;
 import util.UnfinishedCommentException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +24,32 @@ public class Parser {
                 lines.add(line);
             }
             lexical.buildTokenTable(lines);
+            printTokenTable(lexical.getTable());
         } catch(IOException ex) {
             System.out.println("Erro durante a leitura do arquivo:\n" + ex.getMessage());
         } catch (LexicalException ex) {
             System.out.println(ex.getMessage());
         }
-        lexical.showTable();
+    }
+
+
+    /** Método para mostrar a tabela de símbolos
+     *
+     */
+    private void printTokenTable(List<Token> table) {
+        BufferedWriter writer;
+        String outputFile = input.getName().split("\\.", 2)[0] + ".csv";
+        try {
+            writer = new BufferedWriter(new FileWriter(outputFile));
+            writer.write("Token;Classificacao;Linha\n");
+            for(Token token : table) {
+                writer.write(String.format("\"%s\";%s;%d\n", token.getValue(), token.getType().name, token.getLine()));
+            }
+            writer.close();
+            System.out.println("Saída do analisador léxico salva em " + outputFile);
+        } catch (IOException ex) {
+            System.out.println("Erro ao escrever o arquivo de saída:\n" + ex.getMessage());
+        }
     }
 
     public static void main(String... args) {

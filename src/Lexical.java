@@ -5,7 +5,7 @@ import util.UnfinishedCommentException;
 import java.util.*;
 
 public class Lexical {
-    /** Conjunto de estados da máquina de estados do análisador léxico */
+    /** Conjunto de estados da máquina de estados do analisador léxico */
     enum Status {
         Q0(null),
         Q1(Type.IDENTIFICADOR),
@@ -137,7 +137,7 @@ public class Lexical {
             case Q7:
             case Q10:
             case Q11:
-                return Status.Q0; // Não deveria entrar aqui
+                return Status.Q0;
             case Q5:
                 if(c == '=') { // O token passa a ser uma atribuição
                     return Status.Q6;
@@ -240,13 +240,11 @@ public class Lexical {
         }
     }
 
-    /** Método para mostrar a tabela de símbolos no terminal
-     * @TODO: Saída formatada em .csv ou .json (a decidir)
+    /** Método que retorna a tabela de símbolos
+     *
+     * @return A tabela de símbolos
      */
-    public void showTable() {
-        System.out.println("Token \t Classificação \t Linha");
-        for(Token entry : table) {
-            System.out.println(entry.getValue() + " " + entry.getType().name + " " + entry.getLine());
-        }
+    public List<Token> getTable() {
+        return table;
     }
 }
