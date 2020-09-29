@@ -24,12 +24,13 @@ public class Parser {
                 lines.add(line);
             }
             lexical.buildTokenTable(lines);
-            printTokenTable(lexical.getTable());
         } catch(IOException ex) {
             System.out.println("Erro durante a leitura do arquivo:\n" + ex.getMessage());
         } catch (LexicalException ex) {
             System.out.println(ex.getMessage());
         }
+        
+        printTokenTable(lexical.getTable());
     }
 
 
