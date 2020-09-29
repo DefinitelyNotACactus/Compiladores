@@ -4,7 +4,7 @@ var
 begin
    A := 5;
    B := 10;
-   if (A > B) then
+   if (A >= B) then
    begin
       X := A;
       A := B;

@@ -145,12 +145,12 @@ public class Lexical {
                 return Status.Q0;
             case Q8:
                 if(c == '>' || c == '=') {
-                    return Status.Q8;
+                    return Status.Q7;
                 }
                 return Status.Q0;
             case Q9:
                 if(c == '=') {
-                    return Status.Q9;
+                    return Status.Q7;
                 }
                 return Status.Q0;
             case Q12:
@@ -169,6 +169,7 @@ public class Lexical {
      */
     public void buildTokenTable(List<String> input) throws LexicalException {
         table.clear();
+        currentLine = 0;
         Status previous;
         String token = "";
         // Laço de leitura
@@ -215,7 +216,6 @@ public class Lexical {
                     }
                 } catch (InvalidSymbolException ex) {
                 	errorLine = currentLine;
-                	currentLine = 0;
                     throw new LexicalException("(Linha " + errorLine + ") " + ex.getMessage());
                 }
             }
@@ -234,7 +234,6 @@ public class Lexical {
             }
         }
         
-        currentLine = 0;
         if(status == Status.Q12) { // Chegou ao fim da leitura e o comentário não acabou
             throw new LexicalException("(Linha " + errorLine + ") " + new UnfinishedCommentException().getMessage());
         }
