@@ -23,6 +23,7 @@ public class Syntax implements Grammar {
         return tokenTable.get(currentIndex);
     }
 
+
     @Override
     public void program() throws SyntaxException {
         token = getNext();
@@ -57,6 +58,11 @@ public class Syntax implements Grammar {
         }
     }
 
+    /** lista_declarações_variáveis
+     * Reescrito como
+     * lista_declarações_variáveis -> lista_de_idenficiadores: tipo; lista_declarações_variáveis2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void varDeclarationList() throws SyntaxException {
         idList();
@@ -72,16 +78,16 @@ public class Syntax implements Grammar {
         }
     }
 
-    /** Remover recursão a esquerda de lista_declaraçõoes_variáveis
-     *
-     * @throws SyntaxException
+    /** Remover recursão a esquerda de lista_declarações_variáveis
+     * lista_declarações_variáveis2 -> id lista_de_identificadores2: tipo; lista_declarações_variáveis2 | vazio
+     * @throws SyntaxException Erro sintático
      */
     @Override
     public void varDeclarationList2() throws SyntaxException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
-            token = getNext();
             idList2();
+            token = getNext();
             if (token.getValue().equals(":")) {
                 type();
                 if (!token.getValue().equals(";")) {
@@ -91,8 +97,9 @@ public class Syntax implements Grammar {
             } else {
                 throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
             }
+        } else { // O símbolo lido não ser identificador equivale ao 'vazio', voltar atrás na leitura
+            token = getPrevious();
         }
-        token = getPrevious();
     }
 
     @Override
