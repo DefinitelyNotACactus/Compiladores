@@ -12,6 +12,7 @@ public interface Grammar {
     void subprogramDeclaration() throws SyntaxException;
     void args() throws SyntaxException;
     void paramList() throws SyntaxException;
+    void paramList2() throws SyntaxException;
     void compositeCommand() throws SyntaxException;
     void optionalCommand() throws SyntaxException;
     void commandList() throws SyntaxException;

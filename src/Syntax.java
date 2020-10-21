@@ -69,6 +69,7 @@ public class Syntax implements Grammar {
         token = getNext();
         if(token.getValue().equals(":")) {
             type();
+            token = getNext();
             if(!token.getValue().equals(";")) {
                 throw new SyntaxException("';' não acompanha o tipo", token.getLine());
             }
@@ -102,6 +103,11 @@ public class Syntax implements Grammar {
         }
     }
 
+    /** lista_de_identificadores
+     * Reescrito como
+     * lista_de_identificadores -> id lista_de_identificadores2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void idList() throws SyntaxException {
         token = getNext();
@@ -111,9 +117,9 @@ public class Syntax implements Grammar {
         idList2();
     }
 
-    /** Remover recursão a esquerda de lista_de_identificadores
-     *
-     * @throws SyntaxException
+    /** Remover recursão a esquerda de lista_de_identificadores (lista_de_identificadores2)
+     * lista_de_identificadores2 -> ,id lista_de_identificadores2 | vazio
+     * @throws SyntaxException Erro sintático
      */
     @Override
     public void idList2() throws SyntaxException {
@@ -165,12 +171,58 @@ public class Syntax implements Grammar {
 
     @Override
     public void args() throws SyntaxException {
-
+        token = getNext();
+        if(!token.getValue().equals("(")) { // A ausência de '(' equivale ao vazio
+            token = getPrevious();
+        }
+        paramList();
+        token = getNext();
+        if(!token.getValue().equals(")")) {
+            throw new SyntaxException("Argumentos com ')' faltando", token.getLine());
+        }
     }
 
+    /** lista_de_parametros
+     * Reescrito como
+     * lista_de_parametros -> lista_de_identificadores: tipo; lista_de_parametros2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void paramList() throws SyntaxException {
+        idList();
+        token = getNext();
+        if(!token.getValue().equals(":")) {
+            throw new SyntaxException("':' faltando após a lista de identificadores", token.getLine());
+        }
+        type();
+        token = getNext();
+        if(!token.getValue().equals(";")) {
+            throw new SyntaxException("';' faltando após o tipo", token.getLine());
+        }
+        paramList2();
+    }
 
+    /** lista_de_parametros2
+     * lista_de_parametros2 -> id lista_de_identificadores2:tipo; | vazio
+     * @throws SyntaxException
+     */
+    @Override
+    public void paramList2() throws SyntaxException {
+        token = getNext();
+        if(token.getType() == Type.IDENTIFICADOR) {
+            idList2();
+            token = getNext();
+            if(!token.getValue().equals(":")) {
+                throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
+            }
+            type();
+            token = getNext();
+            if(!token.getValue().equals(";")) {
+                throw new SyntaxException("Lista de parâmetros não encerrada com ';'", token.getLine());
+            }
+        } else { // A ausência de identificador significa entrada vazia
+            token = getPrevious();
+        }
     }
 
     @Override
