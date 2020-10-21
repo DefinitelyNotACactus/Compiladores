@@ -6,6 +6,7 @@ public interface Grammar {
     void varDeclarationList() throws SyntaxException;
     void idList() throws SyntaxException;
     void type() throws SyntaxException;
+    void subprogramsDeclaration() throws SyntaxException;
     void subprogramDeclaration() throws SyntaxException;
     void args() throws SyntaxException;
     void paramList() throws SyntaxException;

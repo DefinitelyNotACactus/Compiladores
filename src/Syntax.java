@@ -7,10 +7,15 @@ public class Syntax implements Grammar {
     private List<Token> tokenTable;
     private int currentIndex;
 
-    public Syntax(List<Token> tokenTable) throws SyntaxException {
+    public Syntax(List<Token> tokenTable) {
         this.tokenTable = tokenTable;
 
         currentIndex = -1;
+    }
+
+    private Token getNext() {
+        currentIndex++;
+        return tokenTable.get(currentIndex);
     }
 
     @Override
@@ -23,8 +28,9 @@ public class Syntax implements Grammar {
                 if(token.getValue().equals(";")) {
                     token = getNext();
                     varDeclaration();
-                    subprogramDeclaration();
+                    subprogramsDeclaration();
                     compositeCommand();
+                    token = getNext();
                     if(!token.getValue().equals(".")) {
                         throw new SyntaxException("Programa não terminado com ponto", token.getLine());
                     }
@@ -42,30 +48,84 @@ public class Syntax implements Grammar {
     @Override
     public void varDeclaration() throws SyntaxException {
         if(token.getValue().equals("var")) {
-            token = getNext();
             varDeclarationList();
-        } else {
-            throw new SyntaxException("Declarações de variáveis não inicia com 'var'", token.getLine());
         }
     }
 
     @Override
     public void varDeclarationList() throws SyntaxException {
+        idListType();
+        varDeclarationList2();
+    }
 
+    // Equivalente de varDeclarationList
+    public void varDeclarationList2() throws SyntaxException {
+        idListType();
+        varDeclarationList2();
+    }
+
+    // Junção de "lista_de_identificadores : tipo ;"
+    // para evitar recursão a esquerda em lista_declarações_variáveis
+    public void idListType() throws SyntaxException {
+        idList();
+        token = getNext();
+        if(token.getValue().equals(":")) {
+            type();
+            token = getNext();
+            if(!token.getValue().equals(";")) {
+                throw new SyntaxException("Lista de declaraçãoo de variáveis não encerrada com ;", token.getLine());
+            }
+        } else {
+            throw new SyntaxException("':' ausente", token.getLine());
+        }
     }
 
     @Override
     public void idList() throws SyntaxException {
-
+        token = getNext();
+        try {
+            if (token.getType() != Type.IDENTIFICADOR) {
+                idList();
+            } else {
+                //if(token.g)
+            }
+        } catch(IndexOutOfBoundsException ex) {
+            throw new SyntaxException("Lista de idenficadores não contém um identificador", token.getLine());
+        }
     }
 
     @Override
     public void type() throws SyntaxException {
-
+        token = getNext();
+        if(!token.getValue().equals("integer") && !token.getValue().equals("real") && !token.getValue().equals("boolean")) {
+            throw new SyntaxException(token.getValue() + " não é um tipo", token.getLine());
+        }
     }
 
-    public void subprogramDeclaration() {
+    @Override
+    public void subprogramsDeclaration() throws SyntaxException {
         // TODO
+    }
+
+    @Override
+    public void subprogramDeclaration() throws SyntaxException {
+        token = getNext();
+        if(token.getValue().equals("procedure")) {
+            token = getNext();
+            if(token.getType() == Type.IDENTIFICADOR) {
+                args();
+                token = getNext();
+                if(token.getValue().equals(";")) {
+                    varDeclaration();
+                    subprogramsDeclaration();
+                    compositeCommand();
+                } else {
+                    throw new SyntaxException("';' Faltando", token.getLine());
+                }
+            } else {
+                throw new SyntaxException(token.getValue() + " não é um identificador", token.getLine());
+            }
+        }
     }
 
     @Override
@@ -79,8 +139,17 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void compositeCommand() {
-        // TODO
+    public void compositeCommand() throws SyntaxException {
+        token = getNext();
+        if(token.getValue().equals("begin")) {
+            optionalCommand();
+            token = getNext();
+            if(!token.getValue().equals("end")) {
+                throw new SyntaxException("Comando composto não encerrado com end", token.getLine());
+            }
+        } else {
+            throw new SyntaxException("Comando composto não iniciado com begin", token.getLine());
+        }
     }
 
     @Override
@@ -156,10 +225,5 @@ public class Syntax implements Grammar {
     @Override
     public void multiplicativeOp() throws SyntaxException {
 
-    }
-
-    private Token getNext() throws SyntaxException {
-        currentIndex++;
-        return tokenTable.get(currentIndex);
     }
 }
