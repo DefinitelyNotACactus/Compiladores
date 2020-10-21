@@ -2,6 +2,7 @@ import util.SyntaxException;
 
 import java.util.List;
 
+/** @noinspection ALL*/
 public class Syntax implements Grammar {
     private Token token;
     private List<Token> tokenTable;
@@ -25,7 +26,7 @@ public class Syntax implements Grammar {
 
 
     @Override
-    public void program() throws SyntaxException {
+    public void programa() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals("program")) {
             token = getNext();
@@ -33,9 +34,9 @@ public class Syntax implements Grammar {
                 token = getNext();
                 if(token.getValue().equals(";")) {
                     token = getNext();
-                    varDeclaration();
-                    subprogramsDeclaration();
-                    compositeCommand();
+                    declaracoes_variaveis();
+                    declaracoes_de_subprogramas();
+                    comando_composto();
                     token = getNext();
                     if(!token.getValue().equals(".")) {
                         throw new SyntaxException("Programa não terminado com ponto", token.getLine());
@@ -52,9 +53,9 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void varDeclaration() throws SyntaxException {
+    public void declaracoes_variaveis() throws SyntaxException {
         if(token.getValue().equals("var")) {
-            varDeclarationList();
+            lista_declaracoes_variaveis();
         }
     }
 
@@ -64,16 +65,16 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void varDeclarationList() throws SyntaxException {
-        idList();
+    public void lista_declaracoes_variaveis() throws SyntaxException {
+        lista_de_identificadores();
         token = getNext();
         if(token.getValue().equals(":")) {
-            type();
+            tipo();
             token = getNext();
             if(!token.getValue().equals(";")) {
                 throw new SyntaxException("';' não acompanha o tipo", token.getLine());
             }
-            varDeclarationList2();
+            lista_declaracoes_variaveis2();
         } else {
             throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
         }
@@ -84,17 +85,17 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void varDeclarationList2() throws SyntaxException {
+    public void lista_declaracoes_variaveis2() throws SyntaxException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
-            idList2();
+            lista_de_identificadores2();
             token = getNext();
             if (token.getValue().equals(":")) {
-                type();
+                tipo();
                 if (!token.getValue().equals(";")) {
                     throw new SyntaxException("';' não acompanha o tipo", token.getLine());
                 }
-                varDeclarationList2();
+                lista_declaracoes_variaveis2();
             } else {
                 throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
             }
@@ -109,12 +110,12 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void idList() throws SyntaxException {
+    public void lista_de_identificadores() throws SyntaxException {
         token = getNext();
         if(token.getType() != Type.IDENTIFICADOR) {
             throw new SyntaxException("Identificador não localizado", token.getLine());
         }
-        idList2();
+        lista_de_identificadores2();
     }
 
     /** Remover recursão a esquerda de lista_de_identificadores (lista_de_identificadores2)
@@ -122,21 +123,21 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void idList2() throws SyntaxException {
+    public void lista_de_identificadores2() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals(",")) { // Ausência de ',' equivale a vazio
             token = getNext();
             if(token.getType() != Type.IDENTIFICADOR) {
                 throw new SyntaxException("',' não acompanhado de identificador", token.getLine());
             }
-            idList2();
+            lista_de_identificadores2();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
             token = getPrevious();
         }
     }
 
     @Override
-    public void type() throws SyntaxException {
+    public void tipo() throws SyntaxException {
         token = getNext();
         if(!token.getValue().equals("integer") && !token.getValue().equals("real") && !token.getValue().equals("boolean")) {
             throw new SyntaxException(token.getValue() + " não é um tipo", token.getLine());
@@ -144,22 +145,22 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void subprogramsDeclaration() throws SyntaxException {
+    public void declaracoes_de_subprogramas() throws SyntaxException {
         // TODO
     }
 
     @Override
-    public void subprogramDeclaration() throws SyntaxException {
+    public void declaracao_de_subprograma() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals("procedure")) {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
-                args();
+                argumentos();
                 token = getNext();
                 if(token.getValue().equals(";")) {
-                    varDeclaration();
-                    subprogramsDeclaration();
-                    compositeCommand();
+                    declaracoes_variaveis();
+                    declaracoes_de_subprogramas();
+                    comando_composto();
                 } else {
                     throw new SyntaxException("';' Faltando", token.getLine());
                 }
@@ -170,12 +171,12 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void args() throws SyntaxException {
+    public void argumentos() throws SyntaxException {
         token = getNext();
         if(!token.getValue().equals("(")) { // A ausência de '(' equivale ao vazio
             token = getPrevious();
         }
-        paramList();
+        lista_de_parametros();
         token = getNext();
         if(!token.getValue().equals(")")) {
             throw new SyntaxException("Argumentos com ')' faltando", token.getLine());
@@ -188,18 +189,18 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void paramList() throws SyntaxException {
-        idList();
+    public void lista_de_parametros() throws SyntaxException {
+        lista_de_identificadores();
         token = getNext();
         if(!token.getValue().equals(":")) {
             throw new SyntaxException("':' faltando após a lista de identificadores", token.getLine());
         }
-        type();
+        tipo();
         token = getNext();
         if(!token.getValue().equals(";")) {
             throw new SyntaxException("';' faltando após o tipo", token.getLine());
         }
-        paramList2();
+        lista_de_parametros2();
     }
 
     /** lista_de_parametros2
@@ -207,15 +208,15 @@ public class Syntax implements Grammar {
      * @throws SyntaxException
      */
     @Override
-    public void paramList2() throws SyntaxException {
+    public void lista_de_parametros2() throws SyntaxException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) {
-            idList2();
+            lista_de_identificadores2();
             token = getNext();
             if(!token.getValue().equals(":")) {
                 throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
             }
-            type();
+            tipo();
             token = getNext();
             if(!token.getValue().equals(";")) {
                 throw new SyntaxException("Lista de parâmetros não encerrada com ';'", token.getLine());
@@ -226,10 +227,10 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void compositeCommand() throws SyntaxException {
+    public void comando_composto() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals("begin")) {
-            optionalCommand();
+            comandos_opcionais();
             token = getNext();
             if(!token.getValue().equals("end")) {
                 throw new SyntaxException("Comando composto não encerrado com end", token.getLine());
@@ -240,77 +241,90 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void optionalCommand() throws SyntaxException {
+    public void comandos_opcionais() throws SyntaxException {
 
     }
 
     @Override
-    public void commandList() throws SyntaxException {
+    public void lista_de_comandos() throws SyntaxException {
 
     }
 
     @Override
-    public void command() throws SyntaxException {
+    public void comando() throws SyntaxException {
 
     }
 
     @Override
-    public void elsePart() throws SyntaxException {
+    public void parte_else() throws SyntaxException {
 
     }
 
     @Override
-    public void var() throws SyntaxException {
+    public void variavel() throws SyntaxException {
 
     }
 
     @Override
-    public void procedureActivation() throws SyntaxException {
+    public void ativacao_de_procedimento() throws SyntaxException {
 
     }
 
     @Override
-    public void expressionList() throws SyntaxException {
+    public void lista_de_expressoes() throws SyntaxException {
 
     }
 
     @Override
-    public void expression() throws SyntaxException {
+    public void expressao() throws SyntaxException {
 
     }
 
     @Override
-    public void simpleExpression() throws SyntaxException {
+    public void expressao_simples() throws SyntaxException {
 
     }
 
     @Override
-    public void term() throws SyntaxException {
+    public void termo() throws SyntaxException {
 
     }
 
     @Override
-    public void factor() throws SyntaxException {
+    public void fator() throws SyntaxException {
 
     }
 
     @Override
-    public void signal() throws SyntaxException {
-
+    public void sinal() throws SyntaxException {
+        token = getNext();
+        if(!token.getValue().equals("+") && !token.getValue().equals("-")) {
+            throw new SyntaxException(token.getValue() + " não é um sinal", token.getLine());
+        }
     }
 
     @Override
-    public void relationalOp() throws SyntaxException {
-
+    public void op_relacional() throws SyntaxException {
+        token = getNext();
+        if(!token.getValue().equals("=") && !token.getValue().equals("<") && !token.getValue().equals(">")
+                && !token.getValue().equals("<=") && !token.getValue().equals(">=") && !token.getValue().equals("<>")) {
+            throw new SyntaxException(token.getValue() + " não é um operador relacional", token.getLine());
+        }
     }
 
     @Override
-    public void additiveOp() throws SyntaxException {
-
+    public void op_aditivo() throws SyntaxException {
+        token = getNext();
+        if(!token.getValue().equals("+") && !token.getValue().equals("-") && !token.getValue().equals("or")) {
+            throw new SyntaxException(token.getValue() + " não é um operador aditivo", token.getLine());
+        }
     }
 
     @Override
-    public void multiplicativeOp() throws SyntaxException {
-
+    public void op_multiplicativo() throws SyntaxException {
+        token = getNext();
+        if(!token.getValue().equals("*") && !token.getValue().equals("/") && !token.getValue().equals("and")) {
+            throw new SyntaxException(token.getValue() + " não é um operador multiplicativo", token.getLine());
+        }
     }
 }
