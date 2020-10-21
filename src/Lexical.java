@@ -5,7 +5,7 @@ import util.UnfinishedCommentException;
 import java.util.*;
 
 public class Lexical {
-    /** Conjunto de estados da máquina de estados do analisador léxico */
+    /** Conjunto de estados da máquina de estados finita do analisador léxico */
     enum Status {
         Q0(null),
         Q1(Type.IDENTIFICADOR),
@@ -216,7 +216,7 @@ public class Lexical {
                     }
                 } catch (InvalidSymbolException ex) {
                 	errorLine = currentLine;
-                    throw new LexicalException("(Linha " + errorLine + ") " + ex.getMessage());
+                    throw new LexicalException(ex.getMessage(), errorLine);
                 }
             }
             // Fim da linha
@@ -235,7 +235,7 @@ public class Lexical {
         }
         
         if(status == Status.Q12) { // Chegou ao fim da leitura e o comentário não acabou
-            throw new LexicalException("(Linha " + errorLine + ") " + new UnfinishedCommentException().getMessage());
+            throw new LexicalException(new UnfinishedCommentException().getMessage(), errorLine);
         }
     }
 

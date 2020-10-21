@@ -1,6 +1,5 @@
-import util.InvalidSymbolException;
 import util.LexicalException;
-import util.UnfinishedCommentException;
+import util.SyntaxException;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -16,6 +15,7 @@ public class Parser {
     }
 
     public void doParse() {
+        long endLexical, startLexical, endSyntax, startSyntax;
         Lexical lexical = new Lexical();
         try {
             List<String> lines = new ArrayList<>();
@@ -23,13 +23,25 @@ public class Parser {
             while((line = reader.readLine()) != null) {
                 lines.add(line);
             }
+
+            startLexical = System.currentTimeMillis();
             lexical.buildTokenTable(lines);
-            printTokenTable(lexical.getTable());
+            endLexical = System.currentTimeMillis();
+
+            System.out.println("Análise léxica realizada em: " + (endLexical - startLexical) + " ms");
+
+            startSyntax = System.currentTimeMillis();
+            Syntax syntax = new Syntax(lexical.getTable());
+            syntax.program();
+            endSyntax = System.currentTimeMillis();
+
+            System.out.println("Análise sintática realizada em: " + (endSyntax - startSyntax) + " ms");
         } catch(IOException ex) {
             System.out.println("Erro durante a leitura do arquivo:\n" + ex.getMessage());
-        } catch (LexicalException ex) {
+        } catch (LexicalException | SyntaxException ex) {
             System.out.println(ex.getMessage());
         }
+        printTokenTable(lexical.getTable());
     }
 
 
@@ -46,7 +58,7 @@ public class Parser {
                 writer.write(String.format("\"%s\";%s;%d\n", token.getValue(), token.getType().name, token.getLine()));
             }
             writer.close();
-            System.out.println("Saída do analisador léxico salva em " + outputFile);
+            System.out.println("\nSaída do analisador léxico salva em " + outputFile);
         } catch (IOException ex) {
             System.out.println("Erro ao escrever o arquivo de saída:\n" + ex.getMessage());
         }
