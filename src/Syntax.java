@@ -18,6 +18,11 @@ public class Syntax implements Grammar {
         return tokenTable.get(currentIndex);
     }
 
+    private Token getPrevious() {
+        currentIndex--;
+        return tokenTable.get(currentIndex);
+    }
+
     @Override
     public void program() throws SyntaxException {
         token = getNext();
@@ -54,43 +59,66 @@ public class Syntax implements Grammar {
 
     @Override
     public void varDeclarationList() throws SyntaxException {
-        idListType();
-        varDeclarationList2();
-    }
-
-    // Equivalente de varDeclarationList
-    public void varDeclarationList2() throws SyntaxException {
-        idListType();
-        varDeclarationList2();
-    }
-
-    // Junção de "lista_de_identificadores : tipo ;"
-    // para evitar recursão a esquerda em lista_declarações_variáveis
-    public void idListType() throws SyntaxException {
         idList();
         token = getNext();
         if(token.getValue().equals(":")) {
             type();
-            token = getNext();
             if(!token.getValue().equals(";")) {
-                throw new SyntaxException("Lista de declaraçãoo de variáveis não encerrada com ;", token.getLine());
+                throw new SyntaxException("';' não acompanha o tipo", token.getLine());
             }
+            varDeclarationList2();
         } else {
-            throw new SyntaxException("':' ausente", token.getLine());
+            throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
         }
+    }
+
+    /** Remover recursão a esquerda de lista_declaraçõoes_variáveis
+     *
+     * @throws SyntaxException
+     */
+    @Override
+    public void varDeclarationList2() throws SyntaxException {
+        token = getNext();
+        if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
+            token = getNext();
+            idList2();
+            if (token.getValue().equals(":")) {
+                type();
+                if (!token.getValue().equals(";")) {
+                    throw new SyntaxException("';' não acompanha o tipo", token.getLine());
+                }
+                varDeclarationList2();
+            } else {
+                throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
+            }
+        }
+        token = getPrevious();
     }
 
     @Override
     public void idList() throws SyntaxException {
         token = getNext();
-        try {
-            if (token.getType() != Type.IDENTIFICADOR) {
-                idList();
-            } else {
-                //if(token.g)
+        if(token.getType() != Type.IDENTIFICADOR) {
+            throw new SyntaxException("Identificador não localizado", token.getLine());
+        }
+        idList2();
+    }
+
+    /** Remover recursão a esquerda de lista_de_identificadores
+     *
+     * @throws SyntaxException
+     */
+    @Override
+    public void idList2() throws SyntaxException {
+        token = getNext();
+        if(token.getValue().equals(",")) { // Ausência de ',' equivale a vazio
+            token = getNext();
+            if(token.getType() != Type.IDENTIFICADOR) {
+                throw new SyntaxException("',' não acompanhado de identificador", token.getLine());
             }
-        } catch(IndexOutOfBoundsException ex) {
-            throw new SyntaxException("Lista de idenficadores não contém um identificador", token.getLine());
+            idList2();
+        } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
+            token = getPrevious();
         }
     }
 

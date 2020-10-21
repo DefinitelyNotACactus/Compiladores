@@ -4,7 +4,9 @@ public interface Grammar {
     void program() throws SyntaxException;
     void varDeclaration() throws SyntaxException;
     void varDeclarationList() throws SyntaxException;
+    void varDeclarationList2() throws SyntaxException;
     void idList() throws SyntaxException;
+    void idList2() throws SyntaxException;
     void type() throws SyntaxException;
     void subprogramsDeclaration() throws SyntaxException;
     void subprogramDeclaration() throws SyntaxException;
