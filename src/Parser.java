@@ -32,7 +32,7 @@ public class Parser {
 
             startSyntax = System.currentTimeMillis();
             Syntax syntax = new Syntax(lexical.getTable());
-            syntax.program();
+            syntax.programa();
             endSyntax = System.currentTimeMillis();
 
             System.out.println("Análise sintática realizada em: " + (endSyntax - startSyntax) + " ms");
