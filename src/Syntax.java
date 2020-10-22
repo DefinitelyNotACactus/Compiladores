@@ -61,7 +61,7 @@ public class Syntax implements Grammar {
 
     /** lista_declarações_variáveis
      * Reescrito como
-     * lista_declarações_variáveis -> lista_de_idenficiadores: tipo; lista_declarações_variáveis2
+     * lista_declarações_variáveis -> lista_de_identificadores: tipo; lista_declarações_variáveis2
      * @throws SyntaxException Erro sintático
      */
     @Override
@@ -188,7 +188,7 @@ public class Syntax implements Grammar {
         	lista_de_parametros();
             token = getNext();
             if(!token.getValue().equals(")")) {
-                throw new SyntaxException("Argumentos com ')' faltando", token.getLine());
+                throw new SyntaxException("Argumentos com ')' faltando (Lido : '" + token.getValue() + "')", token.getLine());
             }
         } else {
         	token = getPrevious();
@@ -197,35 +197,46 @@ public class Syntax implements Grammar {
 
     /** lista_de_parametros
      * Reescrito como
-     * lista_de_parametros -> lista_de_identificadores: tipo; lista_de_parametros2
+     * lista_de_parametros -> lista_de_identificadores: tipo lista_de_parametros2
      * @throws SyntaxException Erro sintático
      */
     @Override
     public void lista_de_parametros() throws SyntaxException {
         lista_de_identificadores();
         token = getNext();
-        if(!token.getValue().equals(":")) {
+        if(token.getValue().equals(":")) {
+            tipo();
+            //token = getNext();
+            //if(token.getValue().equals(";")) {
+                lista_de_parametros2();
+            //} else {
+                //throw new SyntaxException("';' faltando após o tipo", token.getLine());
+            //}
+        } else {
             throw new SyntaxException("':' faltando após a lista de identificadores", token.getLine());
         }
-        tipo();
-        lista_de_parametros2();
     }
 
     /** lista_de_parametros2
-     * lista_de_parametros2 -> id lista_de_identificadores2:tipo; | vazio
-     * @throws SyntaxException
+     * lista_de_parametros2 -> ;id lista_de_identificadores2:tipo | vazio
+     * @throws SyntaxException Erro sintático
      */
     private void lista_de_parametros2() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals(";")) {
-            lista_de_identificadores();
             token = getNext();
-            if(!token.getValue().equals(":")) {
-                throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
+            if (token.getType() == Type.IDENTIFICADOR) {
+                lista_de_identificadores2();
+                token = getNext();
+                if (token.getValue().equals(":")) {
+                    tipo();
+                } else {
+                    throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
+                }
+            } else {
+                throw new SyntaxException("O símbolo lido '" + token.getValue() + "' não é um identificador", token.getLine());
             }
-            tipo();
-            lista_de_parametros2();
-        } else { // A ausência de ";" significa entrada vazia
+        } else { // A ausência de ; significa entrada vazia
             token = getPrevious();
         }
     }
@@ -263,12 +274,13 @@ public class Syntax implements Grammar {
     /** lista_de_comandos2
      * Adicionado para remover a recursão à esquerda de lista_de_comandos
      * lista_de_comandos2 -> ; comando lista_de_comandos2 | VAZIO
-     * @throws SyntaxException
+     * @throws SyntaxException Erro sintático
      */
     private void lista_de_comandos2() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals(";")) {
-
+            comando();
+            lista_de_comandos2();
         } else { // Símbolo vazio
             token = getPrevious();
         }
@@ -319,7 +331,7 @@ public class Syntax implements Grammar {
     /** lista_de_expressoes
      * Reescrito como
      * lista_de_expressoes -> expressao lista_de_expressoes2
-     * @throws SyntaxException
+     * @throws SyntaxException Erro sintático
      */
     @Override
     public void lista_de_expressoes() throws SyntaxException {
@@ -327,23 +339,90 @@ public class Syntax implements Grammar {
         lista_de_expressoes2();
     }
 
+    /** lista_de_expressoes2
+     * Adicionado para remover a recursão à esquerda em lista_de_expressoes
+     * lista_de_expressoes2 -> , expressao lista_de_expressoes2 | VAZIO
+     * @throws SyntaxException Erro sintático
+     */
     private void lista_de_expressoes2() throws SyntaxException {
-
+        token = getNext();
+        if(token.getValue().equals(",")) {
+            expressao();
+            lista_de_expressoes2();
+        } else { // Símbolo vazio
+            token = getPrevious();
+        }
     }
 
     @Override
     public void expressao() throws SyntaxException {
-
+        expressao_simples();
+        try { // Vejamos se é um op relacional
+            op_relacional();
+        } catch (SyntaxException ex) { // Caso entre aqui não é um op_relacional
+            token = getPrevious(); // Voltar na leitura, analisamos como expressão -> expressão_simples
+            return;
+        }
+        expressao_simples(); // Caso passe pelo try, analisamos como expressão -> expressão_simpes op_relacional expressão_simples
     }
 
+    /** expressao_simples
+     * Reescrito como
+     * expressao_simples -> termo expressao_simples2 | sinal termo expressao_simples2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void expressao_simples() throws SyntaxException {
-
+        try { // Assumimos inicialmente que vai ser lido um sinal
+            sinal();
+        } catch (SyntaxException ex) { // Caso entre aqui não é um sinal
+            token = getPrevious(); // Analisamos como expressao_simples -> termo expressao_simples2
+        }
+        termo();
+        expressao_simples2();
     }
 
+    /** expressao_simples2
+     * Adicionado para remover a recursão à esquerda em expressao_simples
+     * expressao_simples2 -> op_aditivo termo expressao_simples2| VAZIO
+     * @throws SyntaxException Erro sintático
+     */
+    private void expressao_simples2() throws SyntaxException {
+        try { // Assumimos que é um op_aditivo o próximo símbolo
+            op_aditivo();
+        } catch(SyntaxException ex) { // Caso entre aqui, o símbolo não é um op_aditivo, logo consideramos como vazio
+            token = getPrevious();
+            return;
+        }
+        termo();
+        expressao_simples2();
+    }
+
+    /** termo
+     * Reescrito como
+     * termo -> fator termo2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void termo() throws SyntaxException {
+        fator();
+        termo2();
+    }
 
+    /** termo2
+     * Adicionado para remover a recursão à esquerda em expressão simples
+     * termo2 -> op_multiplicativo fator termo2| VAZIO
+     * @throws SyntaxException Erro sintático
+     */
+    private void termo2() throws SyntaxException {
+        try {
+            op_multiplicativo();
+        } catch (SyntaxException ex) { // Op_multiplicativo lançou uma exceção, consideramos como símbolo vazio
+            token = getPrevious();
+            return;
+        }
+        fator();
+        termo2();
     }
 
     @Override
