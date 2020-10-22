@@ -257,7 +257,11 @@ public class Syntax implements Grammar {
 
     @Override
     public void comandos_opcionais() throws SyntaxException {
-
+    	try {
+    		lista_de_comandos();
+    	} catch(SyntaxException ex) {
+    		token = getPrevious();
+    	}
     }
 
     /** lista_de_comandos
@@ -288,7 +292,45 @@ public class Syntax implements Grammar {
 
     @Override
     public void comando() throws SyntaxException {
-
+    	token = getNext();
+    	if(variavel()) {
+    		token = getNext();
+    		if(!token.getValue().equals(":")) {
+    			throw new SyntaxException("A variavel no comando não é seguida por ':'", token.getLine());
+    		}
+    		
+    		token = getNext();
+    		if(!token.getValue().equals("=")) {
+    			throw new SyntaxException("O ':' no comando não é seguido por '='", token.getLine());
+    		}
+    		
+    		expressao();
+    	} else if(token.getType() == Type.IDENTIFICADOR) {
+    		token = getPrevious();
+    		ativacao_de_procedimento();
+    	} else if(token.getValue().equals("begin")) {
+    		token = getPrevious();
+    		comando_composto();
+    	} else if(token.getValue().equals("if")) {
+    		token = getNext();
+    		expressao();
+    		token = getNext();
+    		if(!token.getValue().equals("then")) {
+    			// Exceção
+    		}
+    		comando();
+			parte_else();
+    	} else if(token.getValue().equals("while")) {
+    		expressao();
+    		token = getNext();
+    		if(!token.getValue().equals("do")) {
+    			throw new SyntaxException("Palavra chave 'do' não acompanha a expressão do 'while'", token.getLine());
+    		}
+    		
+    		comando();
+    	} else {
+    		throw new SyntaxException("Comando se encontra vazio", token.getLine());
+    	}
     }
 
     @Override
@@ -302,11 +344,13 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void variavel() throws SyntaxException {
-        token = getNext();
+    public boolean variavel() throws SyntaxException {
         if(token.getType() != Type.IDENTIFICADOR) {
-            throw new SyntaxException(token.getValue() + " não é um identificador para variável", token.getLine());
+        	return false;
+            // throw new SyntaxException(token.getValue() + " não é um identificador para variável", token.getLine());
         }
+        
+        return true;
     }
 
     @Override
