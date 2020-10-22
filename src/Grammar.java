@@ -16,7 +16,7 @@ public interface Grammar {
     void lista_de_comandos() throws SyntaxException;
     void comando() throws SyntaxException;
     void parte_else() throws SyntaxException;
-    void variavel() throws SyntaxException;
+    boolean variavel() throws SyntaxException;
     void ativacao_de_procedimento() throws SyntaxException;
     void lista_de_expressoes() throws SyntaxException;
     void expressao() throws SyntaxException;
