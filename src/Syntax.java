@@ -84,8 +84,7 @@ public class Syntax implements Grammar {
      * lista_declarações_variáveis2 -> id lista_de_identificadores2: tipo; lista_declarações_variáveis2 | vazio
      * @throws SyntaxException Erro sintático
      */
-    @Override
-    public void lista_declaracoes_variaveis2() throws SyntaxException {
+    private void lista_declaracoes_variaveis2() throws SyntaxException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
             lista_de_identificadores2();
@@ -122,8 +121,7 @@ public class Syntax implements Grammar {
      * lista_de_identificadores2 -> ,id lista_de_identificadores2 | vazio
      * @throws SyntaxException Erro sintático
      */
-    @Override
-    public void lista_de_identificadores2() throws SyntaxException {
+    private void lista_de_identificadores2() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals(",")) { // Ausência de ',' equivale a vazio
             token = getNext();
@@ -217,8 +215,7 @@ public class Syntax implements Grammar {
      * lista_de_parametros2 -> id lista_de_identificadores2:tipo; | vazio
      * @throws SyntaxException
      */
-    @Override
-    public void lista_de_parametros2() throws SyntaxException {
+    private void lista_de_parametros2() throws SyntaxException {
         token = getNext();
         if(token.getValue().equals(";")) {
             lista_de_identificadores();
@@ -252,9 +249,29 @@ public class Syntax implements Grammar {
 
     }
 
+    /** lista_de_comandos
+     * Reescrito como
+     * lista_de_comandos -> comando lista_de_comandos2
+     * @throws SyntaxException Erro sintático
+     */
     @Override
     public void lista_de_comandos() throws SyntaxException {
+        comando();
+        lista_de_comandos2();
+    }
 
+    /** lista_de_comandos2
+     * Adicionado para remover a recursão à esquerda de lista_de_comandos
+     * lista_de_comandos2 -> ; comando lista_de_comandos2 | VAZIO
+     * @throws SyntaxException
+     */
+    private void lista_de_comandos2() throws SyntaxException {
+        token = getNext();
+        if(token.getValue().equals(";")) {
+
+        } else { // Símbolo vazio
+            token = getPrevious();
+        }
     }
 
     @Override
@@ -264,21 +281,53 @@ public class Syntax implements Grammar {
 
     @Override
     public void parte_else() throws SyntaxException {
-
+        token = getNext();
+        if(token.getValue().equals("else")) {
+            comando();
+        } else { // Comando vazio
+            token = getPrevious();
+        }
     }
 
     @Override
     public void variavel() throws SyntaxException {
-
+        token = getNext();
+        if(token.getType() != Type.IDENTIFICADOR) {
+            throw new SyntaxException(token.getValue() + " não é um identificador para variável", token.getLine());
+        }
     }
 
     @Override
     public void ativacao_de_procedimento() throws SyntaxException {
-
+        token = getNext();
+        if(token.getType() == Type.IDENTIFICADOR) {
+            token = getNext();
+            if(token.getValue().equals("(")) {
+                lista_de_expressoes();
+                token = getNext();
+                if(!token.getValue().equals(")")) {
+                    throw new SyntaxException("Ausência de ')' no fim da ativação de procedimento", token.getLine());
+                }
+            } else {
+                token = getPrevious();
+            }
+        } else {
+            throw new SyntaxException("Identificador não encontrado na ativação de procedimento", token.getLine());
+        }
     }
 
+    /** lista_de_expressoes
+     * Reescrito como
+     * lista_de_expressoes -> expressao lista_de_expressoes2
+     * @throws SyntaxException
+     */
     @Override
     public void lista_de_expressoes() throws SyntaxException {
+        expressao();
+        lista_de_expressoes2();
+    }
+
+    private void lista_de_expressoes2() throws SyntaxException {
 
     }
 
@@ -299,7 +348,43 @@ public class Syntax implements Grammar {
 
     @Override
     public void fator() throws SyntaxException {
-
+        token = getNext();
+        switch (token.getType()) {
+            case IDENTIFICADOR:
+                token = getNext();
+                if(token.getValue().equals("(")) {
+                    lista_de_expressoes();
+                    token = getNext();
+                    if(!token.getValue().equals(")")) {
+                        throw new SyntaxException("'(' não acompanhado por ')'", token.getLine());
+                    }
+                }
+                break;
+            case INTEIRO:
+            case REAL:
+                // Faz nada
+                break;
+            default:
+                switch(token.getValue()) {
+                    case "true":
+                    case "false":
+                        // Faz nada
+                        break;
+                    case "(":
+                        expressao();
+                        token = getNext();
+                        if(!token.getValue().equals(")")) {
+                            throw new SyntaxException("'(' não acompanhado por ')'", token.getLine());
+                        }
+                        break;
+                    case "not":
+                        expressao();
+                        break;
+                    default:
+                        throw new SyntaxException("Fator não reconhecido", token.getLine());
+                }
+                break;
+        }
     }
 
     @Override
