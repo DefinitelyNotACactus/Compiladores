@@ -144,14 +144,27 @@ public class Syntax implements Grammar {
         }
     }
 
+    /** Não é necessário criar novo método para eliminar recursão pela esquerda, pois a segunda opção da regra é o vazio 
+     * declarações_de_subprogramas → vazio | declarações_de_subprogramas2
+     * declarações_de_subprogramas2 → declaração_de_subprograma ; declarações_de_subprogramas2 | vazio
+     */
     @Override
     public void declaracoes_de_subprogramas() throws SyntaxException {
-        // TODO
+        token = getNext();
+        if(token.getValue().equals("procedure")) { // ausência de "procedure" equivale a vazio
+        	declaracao_de_subprograma();
+        	token = getNext();
+        	if (!token.getValue().equals(";")) {
+                throw new SyntaxException("';' não acompanha o subprograma", token.getLine());
+            }
+            declaracoes_de_subprogramas();
+        } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
+            token = getPrevious();
+        }
     }
 
     @Override
     public void declaracao_de_subprograma() throws SyntaxException {
-        token = getNext();
         if(token.getValue().equals("procedure")) {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
