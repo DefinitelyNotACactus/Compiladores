@@ -186,14 +186,15 @@ public class Syntax implements Grammar {
     @Override
     public void argumentos() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("(")) { // A ausência de '(' equivale ao vazio
-            token = getPrevious();
-        }
-        lista_de_parametros();
-        token = getNext();
-        if(!token.getValue().equals(")")) {
-            throw new SyntaxException("Argumentos com ')' faltando", token.getLine());
-        }
+        if(token.getValue().equals("(")) { // A ausência de '(' equivale ao vazio
+        	lista_de_parametros();
+            token = getNext();
+            if(!token.getValue().equals(")")) {
+                throw new SyntaxException("Argumentos com ')' faltando", token.getLine());
+            }
+        } else {
+        	token = getPrevious();
+        }    
     }
 
     /** lista_de_parametros
@@ -209,10 +210,6 @@ public class Syntax implements Grammar {
             throw new SyntaxException("':' faltando após a lista de identificadores", token.getLine());
         }
         tipo();
-        token = getNext();
-        if(!token.getValue().equals(";")) {
-            throw new SyntaxException("';' faltando após o tipo", token.getLine());
-        }
         lista_de_parametros2();
     }
 
@@ -223,18 +220,15 @@ public class Syntax implements Grammar {
     @Override
     public void lista_de_parametros2() throws SyntaxException {
         token = getNext();
-        if(token.getType() == Type.IDENTIFICADOR) {
-            lista_de_identificadores2();
+        if(token.getValue().equals(";")) {
+            lista_de_identificadores();
             token = getNext();
             if(!token.getValue().equals(":")) {
                 throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
             }
             tipo();
-            token = getNext();
-            if(!token.getValue().equals(";")) {
-                throw new SyntaxException("Lista de parâmetros não encerrada com ';'", token.getLine());
-            }
-        } else { // A ausência de identificador significa entrada vazia
+            lista_de_parametros2();
+        } else { // A ausência de ";" significa entrada vazia
             token = getPrevious();
         }
     }
