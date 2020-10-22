@@ -33,7 +33,6 @@ public class Syntax implements Grammar {
             if(token.getType() == Type.IDENTIFICADOR) {
                 token = getNext();
                 if(token.getValue().equals(";")) {
-                    token = getNext();
                     declaracoes_variaveis();
                     declaracoes_de_subprogramas();
                     comando_composto();
@@ -54,8 +53,11 @@ public class Syntax implements Grammar {
 
     @Override
     public void declaracoes_variaveis() throws SyntaxException {
+        token = getNext();
         if(token.getValue().equals("var")) {
             lista_declaracoes_variaveis();
+        } else { // Não ler um var significa ler 'vazio'
+            token = getPrevious();
         }
     }
 
@@ -295,16 +297,11 @@ public class Syntax implements Grammar {
     	token = getNext();
     	if(variavel()) {
     		token = getNext();
-    		if(!token.getValue().equals(":")) {
-    			throw new SyntaxException("A variavel no comando não é seguida por ':'", token.getLine());
-    		}
-    		
-    		token = getNext();
-    		if(!token.getValue().equals("=")) {
-    			throw new SyntaxException("O ':' no comando não é seguido por '='", token.getLine());
-    		}
-    		
-    		expressao();
+    		if(token.getValue().equals(":=")) {
+    			expressao();
+    		} else {
+                throw new SyntaxException("A variavel no comando não é seguida por ':='", token.getLine());
+            }
     	} else if(token.getType() == Type.IDENTIFICADOR) {
     		token = getPrevious();
     		ativacao_de_procedimento();
@@ -316,7 +313,7 @@ public class Syntax implements Grammar {
     		expressao();
     		token = getNext();
     		if(!token.getValue().equals("then")) {
-    			// Exceção
+    			throw new SyntaxException("A expressão não é seguida por 'then'", token.getLine());
     		}
     		comando();
 			parte_else();
@@ -326,7 +323,6 @@ public class Syntax implements Grammar {
     		if(!token.getValue().equals("do")) {
     			throw new SyntaxException("Palavra chave 'do' não acompanha a expressão do 'while'", token.getLine());
     		}
-    		
     		comando();
     	} else {
     		throw new SyntaxException("Comando se encontra vazio", token.getLine());
@@ -481,6 +477,8 @@ public class Syntax implements Grammar {
                     if(!token.getValue().equals(")")) {
                         throw new SyntaxException("'(' não acompanhado por ')'", token.getLine());
                     }
+                } else {
+                    token = getPrevious(); // Voltar atrás na leitura pois não lemos um '('
                 }
                 break;
             case INTEIRO:
@@ -513,33 +511,58 @@ public class Syntax implements Grammar {
     @Override
     public void sinal() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("+") && !token.getValue().equals("-")) {
-            throw new SyntaxException(token.getValue() + " não é um sinal", token.getLine());
+        switch (token.getValue()) {
+            case "+":
+            case "-":
+                // Faz nada
+                break;
+            default: // Foi lido alguma coisa que não seja um sinal
+                throw new SyntaxException(token.getValue() + " não é um sinal", token.getLine());
         }
     }
 
     @Override
     public void op_relacional() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("=") && !token.getValue().equals("<") && !token.getValue().equals(">")
-                && !token.getValue().equals("<=") && !token.getValue().equals(">=") && !token.getValue().equals("<>")) {
-            throw new SyntaxException(token.getValue() + " não é um operador relacional", token.getLine());
+        switch (token.getValue()) {
+            case "=":
+            case "<":
+            case ">":
+            case "<=":
+            case ">=":
+            case "<>":
+                // Faz nada
+                break;
+            default: // Foi lido alguma coisa que não seja um op_relacional
+                throw new SyntaxException(token.getValue() + " não é um operador relacional", token.getLine());
         }
     }
 
     @Override
     public void op_aditivo() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("+") && !token.getValue().equals("-") && !token.getValue().equals("or")) {
-            throw new SyntaxException(token.getValue() + " não é um operador aditivo", token.getLine());
+        switch (token.getValue()) {
+            case "+":
+            case "-":
+            case "or":
+                // Faz nada
+                break;
+            default: // Foi lido alguma coisa que não seja um op_aditivo
+                throw new SyntaxException(token.getValue() + " não é um operador aditivo", token.getLine());
         }
     }
 
     @Override
     public void op_multiplicativo() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("*") && !token.getValue().equals("/") && !token.getValue().equals("and")) {
-            throw new SyntaxException(token.getValue() + " não é um operador multiplicativo", token.getLine());
+        switch (token.getValue()) {
+            case "*":
+            case "/":
+            case "and":
+                // Faz nada
+                break;
+            default: // Foi lido alguma coisa que não seja um op_multiplicativo
+                throw new SyntaxException(token.getValue() + " não é um operador multiplicativo", token.getLine());
         }
     }
 }
