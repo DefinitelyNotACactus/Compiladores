@@ -38,10 +38,10 @@ public class Syntax implements Grammar {
                     comando_composto();
                     token = getNext();
                     if(!token.getValue().equals(".")) {
-                        throw new SyntaxException("Programa não terminado com ponto", token.getLine());
+                        throw new SyntaxException("Esperado '.' encontrado: '" + token.getValue() + "'", token.getLine());
                     }
                 } else {
-                    throw new SyntaxException("Identificador não acompanhado por ';'", token.getLine());
+                    throw new SyntaxException("Identificador não acompanhado por ';', encontrado no lugar: '" + token.getValue() + "'", token.getLine());
                 }
             } else {
                 throw new SyntaxException("Programa sem identificador", token.getLine());
@@ -74,11 +74,11 @@ public class Syntax implements Grammar {
             tipo();
             token = getNext();
             if(!token.getValue().equals(";")) {
-                throw new SyntaxException("';' não acompanha o tipo", token.getLine());
+                throw new SyntaxException("Esperado ';' após o tipo, encontrado: '" + token.getValue() + "'", token.getLine());
             }
             lista_declaracoes_variaveis2();
         } else {
-            throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
+            throw new SyntaxException("Esperado ':' após a lista de identificadores, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -94,11 +94,11 @@ public class Syntax implements Grammar {
             if (token.getValue().equals(":")) {
                 tipo();
                 if (!token.getValue().equals(";")) {
-                    throw new SyntaxException("';' não acompanha o tipo", token.getLine());
+                    throw new SyntaxException("Esperado ';' após o tipo, encontrado: '" + token.getValue() + "'", token.getLine());
                 }
                 lista_declaracoes_variaveis2();
             } else {
-                throw new SyntaxException("':' não acompanha a lista de identificadores", token.getLine());
+                throw new SyntaxException("Esperado ':' após a lista de identificadores, encontrado: '" + token.getValue() + "'", token.getLine());
             }
         } else { // O símbolo lido não ser identificador equivale ao 'vazio', voltar atrás na leitura
             token = getPrevious();
@@ -114,7 +114,7 @@ public class Syntax implements Grammar {
     public void lista_de_identificadores() throws SyntaxException {
         token = getNext();
         if(token.getType() != Type.IDENTIFICADOR) {
-            throw new SyntaxException("Identificador não localizado", token.getLine());
+            throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
         }
         lista_de_identificadores2();
     }
@@ -128,7 +128,7 @@ public class Syntax implements Grammar {
         if(token.getValue().equals(",")) { // Ausência de ',' equivale a vazio
             token = getNext();
             if(token.getType() != Type.IDENTIFICADOR) {
-                throw new SyntaxException("',' não acompanhado de identificador", token.getLine());
+                throw new SyntaxException("Esperado ',' após o identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
             lista_de_identificadores2();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
@@ -140,7 +140,7 @@ public class Syntax implements Grammar {
     public void tipo() throws SyntaxException {
         token = getNext();
         if(!token.getValue().equals("integer") && !token.getValue().equals("real") && !token.getValue().equals("boolean")) {
-            throw new SyntaxException(token.getValue() + " não é um tipo", token.getLine());
+            throw new SyntaxException("Esperado um tipo, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -155,7 +155,7 @@ public class Syntax implements Grammar {
         	declaracao_de_subprograma();
         	token = getNext();
         	if (!token.getValue().equals(";")) {
-                throw new SyntaxException("';' não acompanha o subprograma", token.getLine());
+                throw new SyntaxException("Esperado ';' após o subprograma, encontrado: '" + token.getValue() + "'", token.getLine());
             }
             declaracoes_de_subprogramas();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
@@ -175,10 +175,10 @@ public class Syntax implements Grammar {
                     declaracoes_de_subprogramas();
                     comando_composto();
                 } else {
-                    throw new SyntaxException("';' Faltando", token.getLine());
+                    throw new SyntaxException("';' Faltando ao fim", token.getLine());
                 }
             } else {
-                throw new SyntaxException(token.getValue() + " não é um identificador", token.getLine());
+                throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
         }
     }
@@ -190,7 +190,7 @@ public class Syntax implements Grammar {
         	lista_de_parametros();
             token = getNext();
             if(!token.getValue().equals(")")) {
-                throw new SyntaxException("Argumentos com ')' faltando (Lido : '" + token.getValue() + "')", token.getLine());
+                throw new SyntaxException("Esperado um ')' ao fim dos argumentos, encontrado: '" + token.getValue() + "'", token.getLine());
             }
         } else {
         	token = getPrevious();
@@ -208,14 +208,9 @@ public class Syntax implements Grammar {
         token = getNext();
         if(token.getValue().equals(":")) {
             tipo();
-            //token = getNext();
-            //if(token.getValue().equals(";")) {
-                lista_de_parametros2();
-            //} else {
-                //throw new SyntaxException("';' faltando após o tipo", token.getLine());
-            //}
+            lista_de_parametros2();
         } else {
-            throw new SyntaxException("':' faltando após a lista de identificadores", token.getLine());
+            throw new SyntaxException("Esperado um ':' ao fim da lista de identificadores, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -233,10 +228,10 @@ public class Syntax implements Grammar {
                 if (token.getValue().equals(":")) {
                     tipo();
                 } else {
-                    throw new SyntaxException("A lista de identificadores não é seguida por ':'", token.getLine());
+                    throw new SyntaxException("Esperado um ':' ao fim da lista de identificadores, encontrado: '" + token.getValue()  + "'", token.getLine());
                 }
             } else {
-                throw new SyntaxException("O símbolo lido '" + token.getValue() + "' não é um identificador", token.getLine());
+                throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
         } else { // A ausência de ; significa entrada vazia
             token = getPrevious();
@@ -250,10 +245,10 @@ public class Syntax implements Grammar {
             comandos_opcionais();
             token = getNext();
             if(!token.getValue().equals("end")) {
-                throw new SyntaxException("Comando composto não encerrado com end", token.getLine());
+                throw new SyntaxException("Esperado 'end' ao fim do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
             }
         } else {
-            throw new SyntaxException("Comando composto não iniciado com begin", token.getLine());
+            throw new SyntaxException("Esperado 'begin' ao início do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -300,7 +295,7 @@ public class Syntax implements Grammar {
     		if(token.getValue().equals(":=")) {
     			expressao();
     		} else {
-                throw new SyntaxException("A variavel no comando não é seguida por ':='", token.getLine());
+                throw new SyntaxException("Esperado ':=' após a variável, encontrado: '" + token.getValue() + "'", token.getLine());
             }
     	} else if(token.getType() == Type.IDENTIFICADOR) {
     		token = getPrevious();
@@ -309,11 +304,10 @@ public class Syntax implements Grammar {
     		token = getPrevious();
     		comando_composto();
     	} else if(token.getValue().equals("if")) {
-    		token = getNext();
     		expressao();
     		token = getNext();
     		if(!token.getValue().equals("then")) {
-    			throw new SyntaxException("A expressão não é seguida por 'then'", token.getLine());
+    			throw new SyntaxException("Esperado 'then' após a expressão, encontrado: '" + token.getValue() + "'", token.getLine());
     		}
     		comando();
 			parte_else();
@@ -321,11 +315,11 @@ public class Syntax implements Grammar {
     		expressao();
     		token = getNext();
     		if(!token.getValue().equals("do")) {
-    			throw new SyntaxException("Palavra chave 'do' não acompanha a expressão do 'while'", token.getLine());
+    			throw new SyntaxException("Esperado 'do' após a expressão do 'while', encontrado: '" + token.getValue() + "'", token.getLine());
     		}
     		comando();
     	} else {
-    		throw new SyntaxException("Comando se encontra vazio", token.getLine());
+    		throw new SyntaxException("O Comando se encontra vazio", token.getLine());
     	}
     }
 
@@ -341,12 +335,7 @@ public class Syntax implements Grammar {
 
     @Override
     public boolean variavel() throws SyntaxException {
-        if(token.getType() != Type.IDENTIFICADOR) {
-        	return false;
-            // throw new SyntaxException(token.getValue() + " não é um identificador para variável", token.getLine());
-        }
-        
-        return true;
+        return token.getType() == Type.IDENTIFICADOR;
     }
 
     @Override
@@ -358,13 +347,13 @@ public class Syntax implements Grammar {
                 lista_de_expressoes();
                 token = getNext();
                 if(!token.getValue().equals(")")) {
-                    throw new SyntaxException("Ausência de ')' no fim da ativação de procedimento", token.getLine());
+                    throw new SyntaxException("Esperado ')' ao fim da ativação de procedimento, encontrado: '" + token.getValue() + "'", token.getLine());
                 }
             } else {
                 token = getPrevious();
             }
         } else {
-            throw new SyntaxException("Identificador não encontrado na ativação de procedimento", token.getLine());
+            throw new SyntaxException("Esperado um identificador na ativação de procedimento, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -475,7 +464,7 @@ public class Syntax implements Grammar {
                     lista_de_expressoes();
                     token = getNext();
                     if(!token.getValue().equals(")")) {
-                        throw new SyntaxException("'(' não acompanhado por ')'", token.getLine());
+                        throw new SyntaxException("'(' não acompanhado por ')', encontrado: '" + token.getValue() + "'", token.getLine());
                     }
                 } else {
                     token = getPrevious(); // Voltar atrás na leitura pois não lemos um '('
@@ -495,7 +484,7 @@ public class Syntax implements Grammar {
                         expressao();
                         token = getNext();
                         if(!token.getValue().equals(")")) {
-                            throw new SyntaxException("'(' não acompanhado por ')'", token.getLine());
+                            throw new SyntaxException("'(' não acompanhado por ')', encontrado: '" + token.getValue() + "'", token.getLine());
                         }
                         break;
                     case "not":
@@ -517,7 +506,7 @@ public class Syntax implements Grammar {
                 // Faz nada
                 break;
             default: // Foi lido alguma coisa que não seja um sinal
-                throw new SyntaxException(token.getValue() + " não é um sinal", token.getLine());
+                throw new SyntaxException("Esperado um sinal ('+', '-'), encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -534,7 +523,7 @@ public class Syntax implements Grammar {
                 // Faz nada
                 break;
             default: // Foi lido alguma coisa que não seja um op_relacional
-                throw new SyntaxException(token.getValue() + " não é um operador relacional", token.getLine());
+                throw new SyntaxException("Esperado um operador relacional ('=', '<', '>', '<=', '>=', '<>'), encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -548,7 +537,7 @@ public class Syntax implements Grammar {
                 // Faz nada
                 break;
             default: // Foi lido alguma coisa que não seja um op_aditivo
-                throw new SyntaxException(token.getValue() + " não é um operador aditivo", token.getLine());
+                throw new SyntaxException("Esperado um operador aditivo ('+', '-', 'or'), encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -562,7 +551,7 @@ public class Syntax implements Grammar {
                 // Faz nada
                 break;
             default: // Foi lido alguma coisa que não seja um op_multiplicativo
-                throw new SyntaxException(token.getValue() + " não é um operador multiplicativo", token.getLine());
+                throw new SyntaxException("Esperado um operador multiplicativo ('*', '/', 'and'), encontrado: '" + token.getValue() +"'", token.getLine());
         }
     }
 }
