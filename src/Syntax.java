@@ -1,4 +1,5 @@
 import util.SyntaxException;
+import util.EmptyCommandException;
 
 import java.util.List;
 
@@ -256,7 +257,7 @@ public class Syntax implements Grammar {
     public void comandos_opcionais() throws SyntaxException {
     	try {
     		lista_de_comandos();
-    	} catch(SyntaxException ex) {
+    	} catch(EmptyCommandException ex) {
     		token = getPrevious();
     	}
     }
