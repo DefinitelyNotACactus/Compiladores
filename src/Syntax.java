@@ -309,7 +309,6 @@ public class Syntax implements Grammar {
     		token = getPrevious();
     		comando_composto();
     	} else if(token.getValue().equals("if")) {
-    		token = getNext();
     		expressao();
     		token = getNext();
     		if(!token.getValue().equals("then")) {
