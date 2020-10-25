@@ -146,7 +146,7 @@ public class Syntax implements Grammar {
     }
 
     /** Não é necessário criar novo método para eliminar recursão pela esquerda, pois a segunda opção da regra é o vazio 
-     * declarações_de_subprogramas → vazio | declarações_de_subprogramas2
+     * declarações_de_subprogramas → vazio declarações_de_subprogramas2
      * declarações_de_subprogramas2 → declaração_de_subprograma ; declarações_de_subprogramas2 | vazio
      */
     @Override
@@ -216,7 +216,7 @@ public class Syntax implements Grammar {
     }
 
     /** lista_de_parametros2
-     * lista_de_parametros2 -> ;id lista_de_identificadores2:tipo | vazio
+     * lista_de_parametros2 -> ;id lista_de_identificadores2:tipo lista_de_parametros2 | vazio
      * @throws SyntaxException Erro sintático
      */
     private void lista_de_parametros2() throws SyntaxException {
@@ -228,6 +228,7 @@ public class Syntax implements Grammar {
                 token = getNext();
                 if (token.getValue().equals(":")) {
                     tipo();
+                    lista_de_parametros2();
                 } else {
                     throw new SyntaxException("Esperado um ':' ao fim da lista de identificadores, encontrado: '" + token.getValue()  + "'", token.getLine());
                 }
@@ -320,7 +321,7 @@ public class Syntax implements Grammar {
     		}
     		comando();
     	} else {
-    		throw new SyntaxException("O Comando se encontra vazio", token.getLine());
+    		throw new EmptyCommandException("O Comando se encontra vazio", token.getLine());
     	}
     }
 
