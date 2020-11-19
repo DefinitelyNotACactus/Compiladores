@@ -7,10 +7,12 @@ import java.util.List;
 public class Syntax implements Grammar {
     private Token token;
     private List<Token> tokenTable;
+    private SymbolTable symbolTable;
     private int currentIndex;
 
     public Syntax(List<Token> tokenTable) {
         this.tokenTable = tokenTable;
+        this.symbolTable = new SymbolTable();
 
         currentIndex = -1;
     }
@@ -31,7 +33,9 @@ public class Syntax implements Grammar {
         token = getNext();
         if(token.getValue().equals("program")) {
             token = getNext();
+            symbolTable.startNewScope();
             if(token.getType() == Type.IDENTIFICADOR) {
+            	symbolTable.addSymbol(token);
                 token = getNext();
                 if(token.getValue().equals(";")) {
                     declaracoes_variaveis();
@@ -117,6 +121,7 @@ public class Syntax implements Grammar {
         if(token.getType() != Type.IDENTIFICADOR) {
             throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
         }
+        symbolTable.addSymbol(token);
         lista_de_identificadores2();
     }
 
@@ -131,6 +136,7 @@ public class Syntax implements Grammar {
             if(token.getType() != Type.IDENTIFICADOR) {
                 throw new SyntaxException("Esperado ',' após o identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
+            symbolTable.addSymbol(token);
             lista_de_identificadores2();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
             token = getPrevious();
@@ -169,12 +175,15 @@ public class Syntax implements Grammar {
         if(token.getValue().equals("procedure")) {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
+            	symbolTable.addSymbol(token);
+            	symbolTable.startNewScope();
                 argumentos();
                 token = getNext();
                 if(token.getValue().equals(";")) {
                     declaracoes_variaveis();
                     declaracoes_de_subprogramas();
                     comando_composto();
+                    symbolTable.removeScope();
                 } else {
                     throw new SyntaxException("';' Faltando ao fim", token.getLine());
                 }
@@ -344,6 +353,7 @@ public class Syntax implements Grammar {
     public void ativacao_de_procedimento() throws SyntaxException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) {
+        	symbolTable.checkSymbolOnTable(token);
             token = getNext();
             if(token.getValue().equals("(")) {
                 lista_de_expressoes();
@@ -461,6 +471,7 @@ public class Syntax implements Grammar {
         token = getNext();
         switch (token.getType()) {
             case IDENTIFICADOR:
+            	symbolTable.checkSymbolOnTable(token);
                 token = getNext();
                 if(token.getValue().equals("(")) {
                     lista_de_expressoes();
