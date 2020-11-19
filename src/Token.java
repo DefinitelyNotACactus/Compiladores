@@ -1,7 +1,7 @@
 public class Token {
 
     private final String value;
-    private final Type type;
+    private Type type;
     private final int line;
 
     public Token(String value, Type type, int line) {
@@ -12,6 +12,10 @@ public class Token {
 
     public String getValue() {
         return value;
+    }
+
+    public void setType(Type newType) {
+        type = newType;
     }
 
     public Type getType() {

@@ -2,22 +2,42 @@ import util.SemanticException;
 import util.SyntaxException;
 import util.EmptyCommandException;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /** @noinspection ALL*/
 public class Syntax implements Grammar {
     private Token token;
     private List<Token> tokenTable;
+    private List<Token> identifierTable = null;
+    private List<Type> pct;
     private SymbolTable symbolTable;
     private int currentIndex;
     private int counter;
 
     public Syntax(List<Token> tokenTable) {
         this.tokenTable = tokenTable;
-        this.symbolTable = new SymbolTable();
 
+        pct = new LinkedList<>();
+        symbolTable = new SymbolTable();
         currentIndex = -1;
         counter = 0;
+    }
+
+    private void insertIdentifier(Token identifier) {
+        if(identifierTable == null) {
+            identifierTable = new LinkedList<>();
+        }
+        identifierTable.add(identifier);
+    }
+
+    private void markIdentifiers(Type type) {
+        if(identifierTable != null) {
+            for (Token identifier : identifierTable) { // Marca cada identificador como o tipo passado como parâmetro
+                identifier.setType(type);
+            }
+            identifierTable = null; // "Apaga" a tabela
+        }
     }
 
     private Token getNext() {
@@ -30,7 +50,76 @@ public class Syntax implements Grammar {
         return tokenTable.get(currentIndex);
     }
 
-    private void semanticAction(Token token) throws SemanticException {
+    private Type topPct() {
+        return pct.get(pct.size() - 1);
+    }
+
+    private Type subtopPct() {
+        return pct.get(pct.size() - 2);
+    }
+
+    private void updatePct(Type result) {
+        pct.remove(pct.size() - 1);
+        pct.remove(pct.size() - 1);
+        pct.add(result);
+    }
+
+    private void operationResult() throws SemanticException {
+        switch (topPct()) {
+            case INTEIRO:
+                switch (subtopPct()) {
+                    case INTEIRO:
+                        updatePct(Type.INTEIRO);
+                        break;
+                    case REAL:
+                        updatePct(Type.REAL);
+                        break;
+                    default:
+                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                }
+                break;
+            case REAL:
+                switch (subtopPct()) {
+                    case INTEIRO:
+                    case REAL:
+                        updatePct(Type.REAL);
+                        break;
+                    default:
+                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                }
+                break;
+            default:
+                throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+        }
+    }
+
+    private void attResult(Type type) throws SemanticException {
+        switch (topPct()) {
+            case INTEIRO:
+                switch (type) {
+                    case INTEIRO:
+                    case REAL:
+                        // Faz nada, semanticamente correto.
+                        break;
+                    default:
+                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                }
+                break;
+            case REAL:
+                switch (type) {
+                    case REAL:
+                        // Faz nada, semanticamente correto.
+                        break;
+                    default:
+                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                }
+                break;
+            default:
+                throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+        }
+    }
+
+    private void tableAction(Token token) throws SemanticException {
         if(counter == 0) {
             symbolTable.addSymbol(token);
         } else {
@@ -45,7 +134,8 @@ public class Syntax implements Grammar {
             token = getNext();
             symbolTable.startNewScope();
             if(token.getType() == Type.IDENTIFICADOR) {
-            	semanticAction(token);
+            	tableAction(token);
+            	token.setType(Type.PROGRAM); // Atualizar o identificador como PROGRAM
                 token = getNext();
                 if(token.getValue().equals(";")) {
                     declaracoes_variaveis();
@@ -104,10 +194,11 @@ public class Syntax implements Grammar {
     private void lista_declaracoes_variaveis2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
-            lista_de_identificadores2();
+            tableAction(token);
             token = getNext();
             if (token.getValue().equals(":")) {
                 tipo();
+                token = getNext();
                 if (!token.getValue().equals(";")) {
                     throw new SyntaxException("Esperado ';' após o tipo, encontrado: '" + token.getValue() + "'", token.getLine());
                 }
@@ -131,7 +222,8 @@ public class Syntax implements Grammar {
         if(token.getType() != Type.IDENTIFICADOR) {
             throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
         }
-        semanticAction(token);
+        tableAction(token);
+        insertIdentifier(token); // Adicionamos o identificador em uma lista temporária para marcarmos o tipo posteriormente
         lista_de_identificadores2();
     }
 
@@ -146,7 +238,8 @@ public class Syntax implements Grammar {
             if(token.getType() != Type.IDENTIFICADOR) {
                 throw new SyntaxException("Esperado ',' após o identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
-            semanticAction(token);
+            tableAction(token);
+            insertIdentifier(token);
             lista_de_identificadores2();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
             token = getPrevious();
@@ -156,8 +249,18 @@ public class Syntax implements Grammar {
     @Override
     public void tipo() throws SyntaxException {
         token = getNext();
-        if(!token.getValue().equals("integer") && !token.getValue().equals("real") && !token.getValue().equals("boolean")) {
-            throw new SyntaxException("Esperado um tipo, encontrado: '" + token.getValue() + "'", token.getLine());
+        switch (token.getValue()) {
+            case "integer":
+                markIdentifiers(Type.INTEIRO);
+                break;
+            case "real":
+                markIdentifiers(Type.REAL);
+                break;
+            case "boolean":
+                markIdentifiers(Type.BOOLEANO);
+                break;
+            default: // Não foi lido um tipo válido
+                throw new SyntaxException("Esperado um tipo, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
@@ -185,7 +288,7 @@ public class Syntax implements Grammar {
         if(token.getValue().equals("procedure")) {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
-            	semanticAction(token);
+            	tableAction(token);
             	symbolTable.startNewScope();
                 argumentos();
                 token = getNext();
@@ -193,7 +296,6 @@ public class Syntax implements Grammar {
                     declaracoes_variaveis();
                     declaracoes_de_subprogramas();
                     comando_composto();
-                    symbolTable.removeScope();
                 } else {
                     throw new SyntaxException("';' Faltando ao fim", token.getLine());
                 }
@@ -243,6 +345,8 @@ public class Syntax implements Grammar {
         if(token.getValue().equals(";")) {
             token = getNext();
             if (token.getType() == Type.IDENTIFICADOR) {
+                tableAction(token);
+                insertIdentifier(token);
                 lista_de_identificadores2();
                 token = getNext();
                 if (token.getValue().equals(":")) {
@@ -270,6 +374,9 @@ public class Syntax implements Grammar {
                 throw new SyntaxException("Esperado 'end' ao fim do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
             }
             counter--; // Lido um end
+            if(counter == 0) {
+                symbolTable.removeScope();
+            }
         } else {
             throw new SyntaxException("Esperado 'begin' ao início do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
         }
@@ -314,10 +421,12 @@ public class Syntax implements Grammar {
     public void comando() throws SyntaxException, SemanticException {
     	token = getNext();
     	if(variavel()) {
-    	    semanticAction(token);
+    	    tableAction(token);
+            Type idType = token.getType();
     		token = getNext();
     		if(token.getValue().equals(":=")) {
     			expressao();
+                attResult(idType);
     		} else {
                 throw new SyntaxException("Esperado ':=' após a variável, encontrado: '" + token.getValue() + "'", token.getLine());
             }
@@ -367,7 +476,7 @@ public class Syntax implements Grammar {
     public void ativacao_de_procedimento() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) {
-        	symbolTable.checkSymbolOnTable(token);
+        	tableAction(token);
             token = getNext();
             if(token.getValue().equals("(")) {
                 lista_de_expressoes();
@@ -439,7 +548,7 @@ public class Syntax implements Grammar {
 
     /** expressao_simples2
      * Adicionado para remover a recursão à esquerda em expressao_simples
-     * expressao_simples2 -> op_aditivo termo expressao_simples2| VAZIO
+     * expressao_simples2 -> op_aditivo termo expressao_simples2 | VAZIO
      * @throws SyntaxException Erro sintático
      */
     private void expressao_simples2() throws SyntaxException, SemanticException {
@@ -450,6 +559,7 @@ public class Syntax implements Grammar {
             return;
         }
         termo();
+        operationResult();
         expressao_simples2();
     }
 
@@ -477,6 +587,7 @@ public class Syntax implements Grammar {
             return;
         }
         fator();
+        operationResult();
         termo2();
     }
 
@@ -485,7 +596,8 @@ public class Syntax implements Grammar {
         token = getNext();
         switch (token.getType()) {
             case IDENTIFICADOR:
-            	symbolTable.checkSymbolOnTable(token);
+            	tableAction(token);
+            	pct.add(token.getType());
                 token = getNext();
                 if(token.getValue().equals("(")) {
                     lista_de_expressoes();
@@ -498,14 +610,16 @@ public class Syntax implements Grammar {
                 }
                 break;
             case INTEIRO:
+                pct.add(Type.INTEIRO);
+                break;
             case REAL:
-                // Faz nada
+                pct.add(Type.REAL);
                 break;
             default:
                 switch(token.getValue()) {
                     case "true":
                     case "false":
-                        // Faz nada
+                        pct.add(Type.BOOLEANO);
                         break;
                     case "(":
                         expressao();

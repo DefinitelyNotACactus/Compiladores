@@ -10,7 +10,7 @@ public class SymbolTable {
 	}
 	
 	public void startNewScope() {
-		this.stack.add(new Token("$", Type.MARK, 0));
+		this.stack.add(new Token("$", Type.MARK, -1));
 	}
 	
 	private boolean symbolOnScope(Token token) {
@@ -40,6 +40,7 @@ public class SymbolTable {
         for(int index = stack.size() - 1; index >= 0; index--) {
         	currentToken = stack.get(index);
         	if(currentToken.getValue().equals(token.getValue())) {
+        		token.setType(currentToken.getType());
 				return;
 			}
         }
@@ -50,7 +51,7 @@ public class SymbolTable {
     	Token currentToken;
     	for(int index = stack.size() - 1; index >= 0; index--) {
         	currentToken = stack.removeLast();
-        	if(currentToken.getType() == Type.IDENTIFICADOR) {
+        	if(currentToken.getType() == Type.MARK) {
 				break;
 			}
         }
