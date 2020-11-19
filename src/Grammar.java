@@ -1,30 +1,31 @@
+import util.SemanticException;
 import util.SyntaxException;
 
 /** @noinspection ALL*/
 public interface Grammar {
-    void programa() throws SyntaxException;
-    void declaracoes_variaveis() throws SyntaxException;
-    void lista_declaracoes_variaveis() throws SyntaxException;
-    void lista_de_identificadores() throws SyntaxException;
-    void tipo() throws SyntaxException;
-    void declaracoes_de_subprogramas() throws SyntaxException;
-    void declaracao_de_subprograma() throws SyntaxException;
-    void argumentos() throws SyntaxException;
-    void lista_de_parametros() throws SyntaxException;
-    void comando_composto() throws SyntaxException;
-    void comandos_opcionais() throws SyntaxException;
-    void lista_de_comandos() throws SyntaxException;
-    void comando() throws SyntaxException;
-    void parte_else() throws SyntaxException;
-    boolean variavel() throws SyntaxException;
-    void ativacao_de_procedimento() throws SyntaxException;
-    void lista_de_expressoes() throws SyntaxException;
-    void expressao() throws SyntaxException;
-    void expressao_simples() throws SyntaxException;
-    void termo() throws SyntaxException;
-    void fator() throws SyntaxException;
-    void sinal() throws SyntaxException;
-    void op_relacional() throws SyntaxException;
-    void op_aditivo() throws SyntaxException;
-    void op_multiplicativo() throws SyntaxException;
+    void programa() throws SyntaxException, SemanticException;
+    void declaracoes_variaveis() throws SyntaxException, SemanticException;
+    void lista_declaracoes_variaveis() throws SyntaxException, SemanticException;
+    void lista_de_identificadores() throws SyntaxException, SemanticException;
+    void tipo() throws SyntaxException, SemanticException;
+    void declaracoes_de_subprogramas() throws SyntaxException, SemanticException;
+    void declaracao_de_subprograma() throws SyntaxException, SemanticException;
+    void argumentos() throws SyntaxException, SemanticException;
+    void lista_de_parametros() throws SyntaxException, SemanticException;
+    void comando_composto() throws SyntaxException, SemanticException;
+    void comandos_opcionais() throws SyntaxException, SemanticException;
+    void lista_de_comandos() throws SyntaxException, SemanticException;
+    void comando() throws SyntaxException, SemanticException;
+    void parte_else() throws SyntaxException, SemanticException;
+    boolean variavel() throws SyntaxException, SemanticException;
+    void ativacao_de_procedimento() throws SyntaxException, SemanticException;
+    void lista_de_expressoes() throws SyntaxException, SemanticException;
+    void expressao() throws SyntaxException, SemanticException;
+    void expressao_simples() throws SyntaxException, SemanticException;
+    void termo() throws SyntaxException, SemanticException;
+    void fator() throws SyntaxException, SemanticException;
+    void sinal() throws SyntaxException, SemanticException;
+    void op_relacional() throws SyntaxException, SemanticException;
+    void op_aditivo() throws SyntaxException, SemanticException;
+    void op_multiplicativo() throws SyntaxException, SemanticException;
 }

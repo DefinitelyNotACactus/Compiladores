@@ -1,4 +1,5 @@
 import util.LexicalException;
+import util.SemanticException;
 import util.SyntaxException;
 
 import java.io.*;
@@ -35,13 +36,13 @@ public class Parser {
             syntax.programa();
             endSyntax = System.currentTimeMillis();
 
-            System.out.println("Análise sintática realizada em: " + (endSyntax - startSyntax) + " ms");
+            System.out.println("Análise sintática e semântica realizada em: " + (endSyntax - startSyntax) + " ms");
         } catch(IOException ex) {
             System.out.println("Erro durante a leitura do arquivo:\n" + ex.getMessage());
-        } catch (LexicalException | SyntaxException ex) {
+        } catch (LexicalException | SyntaxException | SemanticException ex) {
             System.out.println(ex.getMessage());
         }
-        printTokenTable(lexical.getTable());
+        //printTokenTable(lexical.getTable());
     }
 
 

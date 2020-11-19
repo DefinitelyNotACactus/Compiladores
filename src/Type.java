@@ -7,7 +7,8 @@ public enum Type {
     ATRIBUICAO("Atribuição"),
     OP_RELACIONAL("Operador relacional"),
     OP_ADITIVO("Operador aditivo"),
-    OP_MULTIPLICATIVO("Operador multiplicativo");
+    OP_MULTIPLICATIVO("Operador multiplicativo"),
+    MARK("Mark"); // Usado para o analisador semântico
 
     public final String name;
 

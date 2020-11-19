@@ -1,3 +1,4 @@
+import util.SemanticException;
 import util.SyntaxException;
 import util.EmptyCommandException;
 
@@ -9,12 +10,14 @@ public class Syntax implements Grammar {
     private List<Token> tokenTable;
     private SymbolTable symbolTable;
     private int currentIndex;
+    private int counter;
 
     public Syntax(List<Token> tokenTable) {
         this.tokenTable = tokenTable;
         this.symbolTable = new SymbolTable();
 
         currentIndex = -1;
+        counter = 0;
     }
 
     private Token getNext() {
@@ -27,15 +30,22 @@ public class Syntax implements Grammar {
         return tokenTable.get(currentIndex);
     }
 
+    private void semanticAction(Token token) throws SemanticException {
+        if(counter == 0) {
+            symbolTable.addSymbol(token);
+        } else {
+            symbolTable.checkSymbolOnTable(token);
+        }
+    }
 
     @Override
-    public void programa() throws SyntaxException {
+    public void programa() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("program")) {
             token = getNext();
             symbolTable.startNewScope();
             if(token.getType() == Type.IDENTIFICADOR) {
-            	symbolTable.addSymbol(token);
+            	semanticAction(token);
                 token = getNext();
                 if(token.getValue().equals(";")) {
                     declaracoes_variaveis();
@@ -57,7 +67,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void declaracoes_variaveis() throws SyntaxException {
+    public void declaracoes_variaveis() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("var")) {
             lista_declaracoes_variaveis();
@@ -72,7 +82,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void lista_declaracoes_variaveis() throws SyntaxException {
+    public void lista_declaracoes_variaveis() throws SyntaxException, SemanticException {
         lista_de_identificadores();
         token = getNext();
         if(token.getValue().equals(":")) {
@@ -91,7 +101,7 @@ public class Syntax implements Grammar {
      * lista_declarações_variáveis2 -> id lista_de_identificadores2: tipo; lista_declarações_variáveis2 | vazio
      * @throws SyntaxException Erro sintático
      */
-    private void lista_declaracoes_variaveis2() throws SyntaxException {
+    private void lista_declaracoes_variaveis2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
             lista_de_identificadores2();
@@ -116,12 +126,12 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void lista_de_identificadores() throws SyntaxException {
+    public void lista_de_identificadores() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getType() != Type.IDENTIFICADOR) {
             throw new SyntaxException("Esperado um identificador, encontrado: '" + token.getValue() + "'", token.getLine());
         }
-        symbolTable.addSymbol(token);
+        semanticAction(token);
         lista_de_identificadores2();
     }
 
@@ -129,14 +139,14 @@ public class Syntax implements Grammar {
      * lista_de_identificadores2 -> ,id lista_de_identificadores2 | vazio
      * @throws SyntaxException Erro sintático
      */
-    private void lista_de_identificadores2() throws SyntaxException {
+    private void lista_de_identificadores2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals(",")) { // Ausência de ',' equivale a vazio
             token = getNext();
             if(token.getType() != Type.IDENTIFICADOR) {
                 throw new SyntaxException("Esperado ',' após o identificador, encontrado: '" + token.getValue() + "'", token.getLine());
             }
-            symbolTable.addSymbol(token);
+            semanticAction(token);
             lista_de_identificadores2();
         } else { // Lido um 'vazio', volta na leitura para deixar a leitura do símbolo para outra chamada
             token = getPrevious();
@@ -156,7 +166,7 @@ public class Syntax implements Grammar {
      * declarações_de_subprogramas2 → declaração_de_subprograma ; declarações_de_subprogramas2 | vazio
      */
     @Override
-    public void declaracoes_de_subprogramas() throws SyntaxException {
+    public void declaracoes_de_subprogramas() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("procedure")) { // ausência de "procedure" equivale a vazio
         	declaracao_de_subprograma();
@@ -171,11 +181,11 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void declaracao_de_subprograma() throws SyntaxException {
+    public void declaracao_de_subprograma() throws SyntaxException, SemanticException {
         if(token.getValue().equals("procedure")) {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
-            	symbolTable.addSymbol(token);
+            	semanticAction(token);
             	symbolTable.startNewScope();
                 argumentos();
                 token = getNext();
@@ -194,7 +204,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void argumentos() throws SyntaxException {
+    public void argumentos() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("(")) { // A ausência de '(' equivale ao vazio
         	lista_de_parametros();
@@ -213,7 +223,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void lista_de_parametros() throws SyntaxException {
+    public void lista_de_parametros() throws SyntaxException, SemanticException {
         lista_de_identificadores();
         token = getNext();
         if(token.getValue().equals(":")) {
@@ -228,7 +238,7 @@ public class Syntax implements Grammar {
      * lista_de_parametros2 -> ;id lista_de_identificadores2:tipo lista_de_parametros2 | vazio
      * @throws SyntaxException Erro sintático
      */
-    private void lista_de_parametros2() throws SyntaxException {
+    private void lista_de_parametros2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals(";")) {
             token = getNext();
@@ -250,21 +260,23 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void comando_composto() throws SyntaxException {
+    public void comando_composto() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("begin")) {
+            counter++; // Lido um begin
             comandos_opcionais();
             token = getNext();
             if(!token.getValue().equals("end")) {
                 throw new SyntaxException("Esperado 'end' ao fim do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
             }
+            counter--; // Lido um end
         } else {
             throw new SyntaxException("Esperado 'begin' ao início do comando composto, encontrado: '" + token.getValue() + "'", token.getLine());
         }
     }
 
     @Override
-    public void comandos_opcionais() throws SyntaxException {
+    public void comandos_opcionais() throws SyntaxException, SemanticException {
     	try {
     		lista_de_comandos();
     	} catch(EmptyCommandException ex) {
@@ -278,7 +290,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void lista_de_comandos() throws SyntaxException {
+    public void lista_de_comandos() throws SyntaxException, SemanticException {
         comando();
         lista_de_comandos2();
     }
@@ -288,7 +300,7 @@ public class Syntax implements Grammar {
      * lista_de_comandos2 -> ; comando lista_de_comandos2 | VAZIO
      * @throws SyntaxException Erro sintático
      */
-    private void lista_de_comandos2() throws SyntaxException {
+    private void lista_de_comandos2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals(";")) {
             comando();
@@ -299,9 +311,10 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void comando() throws SyntaxException {
+    public void comando() throws SyntaxException, SemanticException {
     	token = getNext();
     	if(variavel()) {
+    	    semanticAction(token);
     		token = getNext();
     		if(token.getValue().equals(":=")) {
     			expressao();
@@ -312,6 +325,7 @@ public class Syntax implements Grammar {
     		token = getPrevious();
     		ativacao_de_procedimento();
     	} else if(token.getValue().equals("begin")) {
+    	    counter++;
     		token = getPrevious();
     		comando_composto();
     	} else if(token.getValue().equals("if")) {
@@ -335,7 +349,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void parte_else() throws SyntaxException {
+    public void parte_else() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals("else")) {
             comando();
@@ -350,7 +364,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void ativacao_de_procedimento() throws SyntaxException {
+    public void ativacao_de_procedimento() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) {
         	symbolTable.checkSymbolOnTable(token);
@@ -375,7 +389,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void lista_de_expressoes() throws SyntaxException {
+    public void lista_de_expressoes() throws SyntaxException, SemanticException {
         expressao();
         lista_de_expressoes2();
     }
@@ -385,7 +399,7 @@ public class Syntax implements Grammar {
      * lista_de_expressoes2 -> , expressao lista_de_expressoes2 | VAZIO
      * @throws SyntaxException Erro sintático
      */
-    private void lista_de_expressoes2() throws SyntaxException {
+    private void lista_de_expressoes2() throws SyntaxException, SemanticException {
         token = getNext();
         if(token.getValue().equals(",")) {
             expressao();
@@ -396,7 +410,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void expressao() throws SyntaxException {
+    public void expressao() throws SyntaxException, SemanticException {
         expressao_simples();
         try { // Vejamos se é um op relacional
             op_relacional();
@@ -413,7 +427,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void expressao_simples() throws SyntaxException {
+    public void expressao_simples() throws SyntaxException, SemanticException {
         try { // Assumimos inicialmente que vai ser lido um sinal
             sinal();
         } catch (SyntaxException ex) { // Caso entre aqui não é um sinal
@@ -428,7 +442,7 @@ public class Syntax implements Grammar {
      * expressao_simples2 -> op_aditivo termo expressao_simples2| VAZIO
      * @throws SyntaxException Erro sintático
      */
-    private void expressao_simples2() throws SyntaxException {
+    private void expressao_simples2() throws SyntaxException, SemanticException {
         try { // Assumimos que é um op_aditivo o próximo símbolo
             op_aditivo();
         } catch(SyntaxException ex) { // Caso entre aqui, o símbolo não é um op_aditivo, logo consideramos como vazio
@@ -445,7 +459,7 @@ public class Syntax implements Grammar {
      * @throws SyntaxException Erro sintático
      */
     @Override
-    public void termo() throws SyntaxException {
+    public void termo() throws SyntaxException, SemanticException {
         fator();
         termo2();
     }
@@ -455,7 +469,7 @@ public class Syntax implements Grammar {
      * termo2 -> op_multiplicativo fator termo2| VAZIO
      * @throws SyntaxException Erro sintático
      */
-    private void termo2() throws SyntaxException {
+    private void termo2() throws SyntaxException, SemanticException {
         try {
             op_multiplicativo();
         } catch (SyntaxException ex) { // Op_multiplicativo lançou uma exceção, consideramos como símbolo vazio
@@ -467,7 +481,7 @@ public class Syntax implements Grammar {
     }
 
     @Override
-    public void fator() throws SyntaxException {
+    public void fator() throws SyntaxException, SemanticException {
         token = getNext();
         switch (token.getType()) {
             case IDENTIFICADOR:
