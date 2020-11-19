@@ -64,7 +64,25 @@ public class Syntax implements Grammar {
         pct.add(result);
     }
 
-    private void operationResult() throws SemanticException {
+    private void relationalOperationResult() throws SemanticException {
+        switch (topPct()) {
+            case REAL:
+            case INTEIRO:
+                switch (subtopPct()) {
+                    case REAL:
+                    case INTEIRO: // <Num> <op_rel> <Num> tem como resultado um booleano
+                        updatePct(Type.BOOLEANO);
+                        break;
+                    default:
+                        throw new SemanticException("Incompabilidade de tipos, operação relacional envolvendo " + topPct().name + " e " + subtopPct().name,  token.getLine());
+                }
+            break;
+            default:
+                throw new SemanticException("Incompabilidade de tipos, operação relacional envolvendo " + topPct().name + " e " + subtopPct().name,  token.getLine());
+        }
+    }
+
+    private void operationResult(Token operationToken) throws SemanticException {
         switch (topPct()) {
             case INTEIRO:
                 switch (subtopPct()) {
@@ -75,7 +93,7 @@ public class Syntax implements Grammar {
                         updatePct(Type.REAL);
                         break;
                     default:
-                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                        throw new SemanticException("Incompatibilidade de tipos, operação envolvendo " + subtopPct().name + " e " + topPct().name, token.getLine());
                 }
                 break;
             case REAL:
@@ -85,37 +103,59 @@ public class Syntax implements Grammar {
                         updatePct(Type.REAL);
                         break;
                     default:
-                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                        throw new SemanticException("Incompatibilidade de tipos, operação envolvendo " + subtopPct().name + " e " + topPct().name, token.getLine());
+                }
+                break;
+            case BOOLEANO:
+                switch (subtopPct()) {
+                    case BOOLEANO:
+                        if(operationToken.getValue().equals("and") || operationToken.getValue().equals("or")) { // Dois booleanos só podem ser envolvidos em operações do tipo and, or.
+                            updatePct(Type.BOOLEANO);
+                        } else {
+                            throw new SemanticException("Incompatibilidade de tipos, operação '" + operationToken.getValue() + "' envolvendo dois operadores booleanos", token.getLine());
+                        }
+                        break;
+                    default:
+                        throw new SemanticException("Incompatibilidade de tipos, operação envolvendo " + subtopPct().name + " e " + topPct().name, token.getLine());
                 }
                 break;
             default:
-                throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                throw new SemanticException("Incompatibilidade de tipos, operação envolvendo " + subtopPct().name + " e " + topPct().name, token.getLine());
         }
     }
 
-    private void attResult(Type type) throws SemanticException {
+    private void attributionResult(Type type) throws SemanticException {
         switch (topPct()) {
             case INTEIRO:
                 switch (type) {
                     case INTEIRO:
-                    case REAL:
-                        // Faz nada, semanticamente correto.
+                    case REAL: //Semanticamente correto.
+                        pct.clear();
                         break;
                     default:
-                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Número Inteiro ou Real", token.getLine());
                 }
                 break;
             case REAL:
                 switch (type) {
-                    case REAL:
-                        // Faz nada, semanticamente correto.
+                    case REAL: // Faz nada, semanticamente correto.
+                        pct.clear();
                         break;
                     default:
-                        throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Número Real", token.getLine());
+                }
+                break;
+            case BOOLEANO:
+                switch (type) {
+                    case BOOLEANO: // Faz nada, semanticamente correto.
+                        pct.clear();
+                        break;
+                    default:
+                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Booleano", token.getLine());
                 }
                 break;
             default:
-                throw new SemanticException("Incompatibilidade de tipos", token.getLine());
+                throw new SemanticException("Incompatibilidade de tipos, tipo da expressão: " + type.name, token.getLine());
         }
     }
 
@@ -195,6 +235,7 @@ public class Syntax implements Grammar {
         token = getNext();
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
             tableAction(token);
+            insertIdentifier(token);
             token = getNext();
             if (token.getValue().equals(":")) {
                 tipo();
@@ -289,6 +330,7 @@ public class Syntax implements Grammar {
             token = getNext();
             if(token.getType() == Type.IDENTIFICADOR) {
             	tableAction(token);
+                token.setType(Type.PROCEDURE);
             	symbolTable.startNewScope();
                 argumentos();
                 token = getNext();
@@ -426,7 +468,7 @@ public class Syntax implements Grammar {
     		token = getNext();
     		if(token.getValue().equals(":=")) {
     			expressao();
-                attResult(idType);
+                attributionResult(idType);
     		} else {
                 throw new SyntaxException("Esperado ':=' após a variável, encontrado: '" + token.getValue() + "'", token.getLine());
             }
@@ -528,6 +570,7 @@ public class Syntax implements Grammar {
             return;
         }
         expressao_simples(); // Caso passe pelo try, analisamos como expressão -> expressão_simpes op_relacional expressão_simples
+        relationalOperationResult();
     }
 
     /** expressao_simples
@@ -558,8 +601,9 @@ public class Syntax implements Grammar {
             token = getPrevious();
             return;
         }
+        Token operationToken = token;
         termo();
-        operationResult();
+        operationResult(operationToken);
         expressao_simples2();
     }
 
@@ -586,8 +630,9 @@ public class Syntax implements Grammar {
             token = getPrevious();
             return;
         }
+        Token operationToken = token;
         fator();
-        operationResult();
+        operationResult(operationToken);
         termo2();
     }
 
@@ -615,12 +660,11 @@ public class Syntax implements Grammar {
             case REAL:
                 pct.add(Type.REAL);
                 break;
+            case BOOLEANO:
+                pct.add(Type.BOOLEANO);
+                break;
             default:
                 switch(token.getValue()) {
-                    case "true":
-                    case "false":
-                        pct.add(Type.BOOLEANO);
-                        break;
                     case "(":
                         expressao();
                         token = getNext();

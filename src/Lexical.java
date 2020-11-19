@@ -68,6 +68,8 @@ public class Lexical {
         keywords.put("to", Type.RESERVADO);
         keywords.put("and", Type.OP_MULTIPLICATIVO);
         keywords.put("or", Type.OP_ADITIVO);
+        keywords.put("false", Type.BOOLEANO);
+        keywords.put("true", Type.BOOLEANO);
 
         return keywords;
     }
