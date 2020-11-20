@@ -125,37 +125,37 @@ public class Syntax implements Grammar {
     }
 
     private void attributionResult(Type type) throws SemanticException {
-        switch (topPct()) {
+        switch (type) {
             case INTEIRO:
-                switch (type) {
-                    case INTEIRO:
-                    case REAL: //Semanticamente correto.
+                switch (topPct()) {
+                    case INTEIRO: //Semanticamente correto.
                         pct.clear();
                         break;
                     default:
-                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Número Inteiro ou Real", token.getLine());
+                        throw new SemanticException("Incompatibilidade de tipos, a expressão tem como resultado: " + topPct().name + ", e era esperado: Número Inteiro", token.getLine());
                 }
                 break;
             case REAL:
-                switch (type) {
-                    case REAL: // Faz nada, semanticamente correto.
+                switch (topPct()) {
+                    case REAL:
+                    case INTEIRO:// Faz nada, semanticamente correto.
                         pct.clear();
                         break;
                     default:
-                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Número Real", token.getLine());
+                        throw new SemanticException("Incompatibilidade de tipos, a expressão tem como resultado: " + topPct().name + ", e era esperado: Número Real ou Inteiro", token.getLine());
                 }
                 break;
             case BOOLEANO:
-                switch (type) {
+                switch (topPct()) {
                     case BOOLEANO: // Faz nada, semanticamente correto.
                         pct.clear();
                         break;
                     default:
-                        throw new SemanticException("Incopatibilidade de tipos, a expressão tem como resultado: " + type.name + ", e era esperado: Booleano", token.getLine());
+                        throw new SemanticException("Incompatibilidade de tipos, a expressão tem como resultado: " + topPct().name + ", e era esperado: Booleano", token.getLine());
                 }
                 break;
             default:
-                throw new SemanticException("Incompatibilidade de tipos, tipo da expressão: " + type.name, token.getLine());
+                throw new SemanticException("Incompatibilidade de tipos, tipo da expressão: " + topPct().name, token.getLine());
         }
     }
 
@@ -476,7 +476,6 @@ public class Syntax implements Grammar {
     		token = getPrevious();
     		ativacao_de_procedimento();
     	} else if(token.getValue().equals("begin")) {
-    	    counter++;
     		token = getPrevious();
     		comando_composto();
     	} else if(token.getValue().equals("if")) {
