@@ -236,6 +236,7 @@ public class Syntax implements Grammar {
         if(token.getType() == Type.IDENTIFICADOR) { // Caso contratrário foi lido o "vazio"
             tableAction(token);
             insertIdentifier(token);
+            lista_de_identificadores2();
             token = getNext();
             if (token.getValue().equals(":")) {
                 tipo();
